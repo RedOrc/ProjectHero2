@@ -1,13 +1,13 @@
-﻿namespace ProjectHero2
-{
-    using System;
-    using System.Runtime.InteropServices;
-    using Microsoft.VisualStudio.Shell;
-    using ProjectHero2.Core;
-    using System.Windows.Forms;
-    using EnvDTE80;
-    using EnvDTE;
+﻿using System;
+using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.Shell;
+using ProjectHero2.Core;
+using System.Windows.Forms;
+using EnvDTE80;
+using EnvDTE;
 
+namespace ProjectHero2
+{
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
     /// </summary>
@@ -19,6 +19,7 @@
     /// implementation of the IVsUIElementPane interface.
     /// </para>
     /// </remarks>
+ 
     [Guid("a82bd635-fef3-4cef-bf8b-df99c8f8063e")]
     public class ProjectHeroToolWindow : ToolWindowPane
     {
