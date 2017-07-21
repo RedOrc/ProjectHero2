@@ -14,6 +14,8 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
+using EnvDTE80;
+using EnvDTE;
 
 namespace ProjectHero2
 {
@@ -40,6 +42,7 @@ namespace ProjectHero2
     [Guid(ProjectHeroCommandPackage.PackageGuidString)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
+    [ProvideToolWindow(typeof(ProjectHeroToolWindow))]
     public sealed class ProjectHeroCommandPackage : Package
     {
         /// <summary>
@@ -66,7 +69,11 @@ namespace ProjectHero2
         /// </summary>
         protected override void Initialize()
         {
+            DTE2 appObject = (DTE2)GetService(typeof(DTE));
+            ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);
+
             ProjectHeroCommand.Initialize(this);
+            ProjectHeroToolWindowCommand.Initialize(this);
             base.Initialize();
         }
 

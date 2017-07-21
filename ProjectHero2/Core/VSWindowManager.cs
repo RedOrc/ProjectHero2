@@ -77,6 +77,8 @@ namespace ProjectHero2.Core
 
         private IntPtr CreateVSWindowInternal2(string commandName, ref VSWindowHandle handle, DTE2 applicationObject, AddIn addIn)
         {
+            return IntPtr.Zero;
+
             string hostAssembly = Assembly.GetCallingAssembly().Location;
             
             // +Alphonso (8/14/2014)

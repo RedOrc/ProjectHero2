@@ -238,9 +238,9 @@ namespace ProjectHero2.Core
 
         private void ActivateControl()
         {
-            Window2 win = VSWindowManager.Manager.GetWindow(VSSettings.vshwnd_ProjectHero);
-            if (!win.Visible)
-                win.Activate();
+            //Window2 win = VSWindowManager.Manager.GetWindow(VSSettings.vshwnd_ProjectHero);
+            //if (!win.Visible)
+                //win.Activate();
         }
 
         private void OnSolutionClosed()

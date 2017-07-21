@@ -9,6 +9,7 @@ using System.Globalization;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Text;
+using ProjectHero2.Core;
 
 namespace ProjectHero2
 {
@@ -25,6 +26,9 @@ namespace ProjectHero2
 
         // VS Package that provides this command, not null.
         private readonly Package package;
+
+        // Tool Window that contains our user control
+        private ProjectHeroToolWindow window;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProjectHeroCommand"/> class.
@@ -44,18 +48,14 @@ namespace ProjectHero2
             if (commandService != null)
             {
                 commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e) {
-                    string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-                    string title = "ProjectHeroCommand";
+                    window = (ProjectHeroToolWindow)this.package.FindToolWindow(typeof(ProjectHeroToolWindow), 0, true);
+                    if ((window == null) || (window.Frame == null))
+                    {
+                        throw new NotSupportedException("Cannot create tool window for Project Hero");
+                    }
 
-                    // Show a message box to prove we were here
-                    VsShellUtilities.ShowMessageBox(
-                        this.ServiceProvider,
-                        message,
-                        title,
-                        OLEMSGICON.OLEMSGICON_INFO,
-                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-                    
+                    IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
+                    Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
                 }, new CommandID(CommandSet, ShowProjectHeroCommandId)));
 
                 commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e)
