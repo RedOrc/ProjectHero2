@@ -15,6 +15,15 @@ namespace ProjectHero2.Core
     /// </summary>
     internal class VSEventManager
     {
+        private static readonly VSEventManager sharedManager = new VSEventManager();
+        public static VSEventManager SharedManager
+        {
+            get
+            {
+                return sharedManager;
+            }
+        }
+
         private WindowVisibilityEvents _windowVisibilityEvents;
         private BuildEvents _buildEvents;
         private SolutionEvents _solutionEvents;
@@ -23,22 +32,20 @@ namespace ProjectHero2.Core
         private CommandEvents _commandEvents;
 
         private DTE2 _applicationObject;
-        private VSWindowManager _winManager = VSWindowManager.Manager;
+        private IDictionary<String, IEventModel> subscriperMap;
 
-        public VSEventManager(DTE2 applicationObject)
+        private const int INITIAL_MAP_CAPACITY = 1;
+
+        public void Setup(DTE2 applicationObject)
         {
             this._applicationObject = applicationObject;
+            this.subscriperMap = new Dictionary<String, IEventModel>(INITIAL_MAP_CAPACITY);
             Init();
         }
 
         private void Init()
         {
             Events2 events2 = (Events2)_applicationObject.Events;
-
-            // Tool window visibility
-            this._windowVisibilityEvents = events2.get_WindowVisibilityEvents();
-            this._windowVisibilityEvents.WindowShowing += _windowVisibilityEvents_WindowShowing;
-            this._windowVisibilityEvents.WindowHiding += _windowVisibilityEvents_WindowHiding;
 
             // Build Events
             this._buildEvents = events2.BuildEvents;
@@ -76,12 +83,27 @@ namespace ProjectHero2.Core
             this._commandEvents.AfterExecute += _commandEvents_AfterExecute;
         }
 
+        public void AddSubscriber(IEventModel subscriber)
+        {
+            if (!this.subscriperMap.ContainsKey(subscriber.SubscriberName))
+            {
+                this.subscriperMap.Add(subscriber.SubscriberName, subscriber);
+            }
+        }
+
+        private void SendMessageToAllSubscribers(VSEvents e, object state)
+        {
+            bool shouldCallNextProcedure = true;
+            foreach (KeyValuePair<String, IEventModel> pair in this.subscriperMap)
+            {
+                IEventModel model = pair.Value;
+                model.EventMessageProcedure(e, state, out shouldCallNextProcedure);
+                if (!shouldCallNextProcedure) break;
+            }
+        }
+
         public void Destroy()
         {
-            // Cleanup window visibility events.
-            this._windowVisibilityEvents.WindowShowing -= _windowVisibilityEvents_WindowShowing;
-            this._windowVisibilityEvents.WindowHiding -= _windowVisibilityEvents_WindowHiding;
-
             // Cleanup build events.
             this._buildEvents.OnBuildBegin -= _buildEvents_OnBuildBegin;
             this._buildEvents.OnBuildDone -= _buildEvents_OnBuildDone;
@@ -114,13 +136,13 @@ namespace ProjectHero2.Core
         void _commandEvents_AfterExecute(string Guid, int ID, object CustomIn, object CustomOut)
         {
             CommandExecuteEventArg e = new CommandExecuteEventArg(Guid, ID, CustomIn, CustomOut, VSUtils.GetCommandByGuidAndID(_applicationObject, Guid, ID));
-            this._winManager.SendMessageToAllWindows(VSEvents.AfterCommandExecute, e);
+            this.SendMessageToAllSubscribers(VSEvents.AfterCommandExecute, e);
         }
 
         void _commandEvents_BeforeExecute(string Guid, int ID, object CustomIn, object CustomOut, ref bool CancelDefault)
         {
             CommandExecuteEventArg e = new CommandExecuteEventArg(Guid, ID, CustomIn, CustomOut, ref CancelDefault, VSUtils.GetCommandByGuidAndID(_applicationObject, Guid, ID));
-            this._winManager.SendMessageToAllWindows(VSEvents.BeforeCommandExecute, e);
+            this.SendMessageToAllSubscribers(VSEvents.BeforeCommandExecute, e);
         }
 
         #endregion Command Events
@@ -130,19 +152,19 @@ namespace ProjectHero2.Core
         void _projectItemEvents_ItemRenamed(ProjectItem ProjectItem, string OldName)
         {
             ProjectItemEventArg e = new ProjectItemEventArg(ProjectItem, OldName);
-            this._winManager.SendMessageToAllWindows(VSEvents.ProjectItemRenamed, e);
+            this.SendMessageToAllSubscribers(VSEvents.ProjectItemRenamed, e);
         }
 
         void _projectItemEvents_ItemRemoved(ProjectItem ProjectItem)
         {
             ProjectItemEventArg e = new ProjectItemEventArg(ProjectItem);
-            this._winManager.SendMessageToAllWindows(VSEvents.ProjectItemRemoved, e);
+            this.SendMessageToAllSubscribers(VSEvents.ProjectItemRemoved, e);
         }
 
         void ProjectItemsEvents_ItemAdded(ProjectItem ProjectItem)
         {
             ProjectItemEventArg e = new ProjectItemEventArg(ProjectItem);
-            this._winManager.SendMessageToAllWindows(VSEvents.ProjectItemAdded, e);
+            this.SendMessageToAllSubscribers(VSEvents.ProjectItemAdded, e);
         }
 
         #endregion Project Item Events
@@ -152,19 +174,19 @@ namespace ProjectHero2.Core
         void _projectEvents_ItemRenamed(Project Project, string OldName)
         {
             ProjectEventArg e = new ProjectEventArg(Project, OldName);
-            this._winManager.SendMessageToAllWindows(VSEvents.ProjectRenamed, e);
+            this.SendMessageToAllSubscribers(VSEvents.ProjectRenamed, e);
         }
 
         void _projectEvents_ItemRemoved(Project Project)
         {
             ProjectEventArg e = new ProjectEventArg(Project);
-            this._winManager.SendMessageToAllWindows(VSEvents.ProjectRemoved, e);
+            this.SendMessageToAllSubscribers(VSEvents.ProjectRemoved, e);
         }
 
         void _projectEvents_ItemAdded(Project Project)
         {
             ProjectEventArg e = new ProjectEventArg(Project);
-            this._winManager.SendMessageToAllWindows(VSEvents.ProjectAdded, e);
+            this.SendMessageToAllSubscribers(VSEvents.ProjectAdded, e);
         }
 
         #endregion Project Events
@@ -174,7 +196,7 @@ namespace ProjectHero2.Core
         void _solutionEvents_Renamed(string OldName)
         {
             SolutionProjectEventArg e = new SolutionProjectEventArg(null, OldName);
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionRenamed, e);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionRenamed, e);
         }
 
         void _solutionEvents_QueryCloseSolution(ref bool fCancel)
@@ -185,34 +207,34 @@ namespace ProjectHero2.Core
         void _solutionEvents_ProjectRenamed(Project Project, string OldName)
         {
             SolutionProjectEventArg e = new SolutionProjectEventArg(Project, OldName);
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionProjectRenamed, e);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionProjectRenamed, e);
         }
 
         void _solutionEvents_ProjectRemoved(Project Project)
         {
             SolutionProjectEventArg e = new SolutionProjectEventArg(Project);
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionProjectRemoved, e);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionProjectRemoved, e);
         }
 
         void _solutionEvents_ProjectAdded(Project Project)
         {
             SolutionProjectEventArg e = new SolutionProjectEventArg(Project);
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionProjectAdded, e);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionProjectAdded, e);
         }
 
         void _solutionEvents_Opened()
         {
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionOpened, null);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionOpened, null);
         }
 
         void _solutionEvents_BeforeClosing()
         {
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionBeforeClosing, null);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionBeforeClosing, null);
         }
 
         void _solutionEvents_AfterClosing()
         {
-            this._winManager.SendMessageToAllWindows(VSEvents.SolutionAfterClosing, null);
+            this.SendMessageToAllSubscribers(VSEvents.SolutionAfterClosing, null);
         }
 
         #endregion Solution Events
@@ -224,7 +246,7 @@ namespace ProjectHero2.Core
         void _buildEvents_OnBuildDone(vsBuildScope Scope, vsBuildAction Action)
         {
             BuildCompleteEventArg e = new BuildCompleteEventArg(Scope, Action);
-            this._winManager.SendMessageToAllWindows(VSEvents.BuildComplete, e);
+            this.SendMessageToAllSubscribers(VSEvents.BuildComplete, e);
         }
 
         // Will fire when any build operation is fired from the IDE. 
@@ -232,7 +254,7 @@ namespace ProjectHero2.Core
         void _buildEvents_OnBuildBegin(vsBuildScope Scope, vsBuildAction Action)
         {
             BuildBeginEventArg e = new BuildBeginEventArg(Scope, Action);
-            this._winManager.SendMessageToAllWindows(VSEvents.BuildBegin, e);
+            this.SendMessageToAllSubscribers(VSEvents.BuildBegin, e);
         }
 
         // Will fire when a project build completes. This event is used to catch the completion
@@ -240,7 +262,7 @@ namespace ProjectHero2.Core
         void _buildEvents_OnBuildProjConfigDone(string Project, string ProjectConfig, string Platform, string SolutionConfig, bool Success)
         {
             BuildProjectConfigEventArg e = new BuildProjectConfigEventArg(Project, ProjectConfig, Platform, SolutionConfig, Success);
-            this._winManager.SendMessageToAllWindows(VSEvents.BuildProjectConfigDone, e);
+            this.SendMessageToAllSubscribers(VSEvents.BuildProjectConfigDone, e);
         }
 
         // Will fire when a project build begins. This event is used to catch each project
@@ -248,31 +270,9 @@ namespace ProjectHero2.Core
         void _buildEvents_OnBuildProjConfigBegin(string Project, string ProjectConfig, string Platform, string SolutionConfig)
         {
             BuildProjectConfigEventArg e = new BuildProjectConfigEventArg(Project, ProjectConfig, Platform, SolutionConfig, false);
-            this._winManager.SendMessageToAllWindows(VSEvents.BuildProjectConfigBegin, e);
+            this.SendMessageToAllSubscribers(VSEvents.BuildProjectConfigBegin, e);
         }
 
         #endregion Build Events
-
-        #region Window Visibility Events
-
-        private void _windowVisibilityEvents_WindowHiding(EnvDTE.Window Window)
-        {
-            if (this._winManager.IsRegisteredWindow(Window.Caption))
-            {
-                if (Window is IThemeControl)
-                    ((IThemeControl)Window.Object).AdjustView(VSToolWindowState.VS_HIDDEN);
-            }
-        }
-
-        private void _windowVisibilityEvents_WindowShowing(EnvDTE.Window Window)
-        {
-            if (this._winManager.IsRegisteredWindow(Window.Caption))
-            {
-                if (Window.Object is IThemeControl)
-                    ((IThemeControl)Window.Object).AdjustView(VSToolWindowState.VS_SHOWN);
-            }
-        }
-
-        #endregion Window Visibility Events
     }
 }

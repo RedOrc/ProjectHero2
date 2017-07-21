@@ -16,6 +16,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
 using EnvDTE80;
 using EnvDTE;
+using ProjectHero2.Core;
 
 namespace ProjectHero2
 {
@@ -70,6 +71,7 @@ namespace ProjectHero2
         protected override void Initialize()
         {
             DTE2 appObject = (DTE2)GetService(typeof(DTE));
+            VSEventManager.SharedManager.Setup(appObject);
             ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);
 
             ProjectHeroCommand.Initialize(this);

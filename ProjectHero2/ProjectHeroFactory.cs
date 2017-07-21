@@ -35,6 +35,7 @@ namespace ProjectHero2
                     if (applicationObject != null)
                     {
                         heroControl.Init(this.applicationObject);
+                        VSEventManager.SharedManager.AddSubscriber(heroControl);
                     }
                 }
                 return this.heroControl;

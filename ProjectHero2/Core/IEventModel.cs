@@ -8,6 +8,8 @@ namespace ProjectHero2.Core
 {
     internal interface IEventModel
     {
+        String SubscriberName { get; }
+
         /// <summary>
         /// The event message procedure is called for all objects that need to receive
         /// a specialized message.

@@ -486,6 +486,14 @@ namespace ProjectHero2.Core
 
         ProjectNode rootNode = null;
 
+        public string SubscriberName
+        {
+            get
+            {
+                return "ucProjectHero";
+            }
+        }
+
         private void ScanSolution2()
         {
             Solution masterSolution = this._applicationObject.Solution;
