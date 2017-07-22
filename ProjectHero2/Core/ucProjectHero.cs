@@ -1,4 +1,16 @@
-﻿using System;
+﻿/**
+ *   _____           _                _____                
+ *  |  _  |___ ___  |_|___ ___| |_   |  |  |___ ___ ___ 
+ *  |   __|  _| . | | | -_|  _|  _|  |     | -_|  _| . |
+ *  |__|  |_| |___|_| |___|___|_|    |__|__|___|_| |___|
+ *                |___|      
+ *    
+ * Copyright © 2017 Alphonso Turner
+ * All Rights Reserved
+ * 
+ */
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -13,6 +25,11 @@ using EnvDTE80;
 using EnvDTE;
 using ProjectHero2.Core.VSEventArgs;
 using ProjectHero2.Core.Iterators;
+using System.Diagnostics;
+using ProjectHero2.Core;
+using static ProjectHero2.Core.ucProjectHero;
+using ProjectHero2.Core.Dialogs;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace ProjectHero2.Core
 {
@@ -40,7 +57,12 @@ namespace ProjectHero2.Core
         private const string PendingConst = "Pending";
         private const string ProjectCountConst = "ProjectCount";
 
-        private new const string DefaultFont = "Calibri";
+        private const string DefaultFont = "Calibri";
+
+        private DateTime dtBuildStartTime = DateTime.MinValue;
+        private DateTime dtBuildEndTime = DateTime.MinValue;
+
+        private QuickSyncRunner m_SyncRunner = new QuickSyncRunner();
 
         internal enum ProjectNodeState : byte
         {
@@ -52,23 +74,42 @@ namespace ProjectHero2.Core
             Error
         }
 
+        public class AvailableProjectNode
+        {
+            public string Name { get; set; }
+            public string FilePath { get; set; }
+            public string Md5Hash { get; set; }
+
+            public VSProjectType ProjType { get; set; }
+
+            public override string ToString()
+            {
+                return Name;
+            }
+        }
+
         internal class ProjectNode
         {
             public string Name { get; private set; }
+            public string FilePath { get; private set; }
+            public string Md5Hash { get; private set; }
             public string UniqueName { get; private set; }
             public string Platform { get; set; }
             public string ProjectConfig { get; set; }
             public VSProjectType ProjType { get; private set; }
             public ProjectNode ParentNode { get; private set; }
-            public DateTime BuildStartTime { get; set; }
-            public DateTime BuildEndTime { get; set; }
+            public Stopwatch BuildStopWatch { get; set; }
+            public TimeSpan BuildTotalTime { get; set; }
             public ProjectNodeState State { get; set; }
             public IList<ErrorItem> ErrorCollection { get; private set; }
             public bool IsSelected { get; set; }
+            public bool IsQuickSyncEnabled { get; set; }
 
-            public ProjectNode(string name, VSProjectType projType, ProjectNode parent, string uniqueName = "")
+            public ProjectNode(string name, string filePath, string md5Hash, VSProjectType projType, ProjectNode parent, string uniqueName = "")
             {
                 this.Name = name;
+                this.FilePath = filePath;
+                this.Md5Hash = md5Hash;
                 this.ProjType = projType;
                 this.ParentNode = parent;
                 this.UniqueName = uniqueName;
@@ -134,8 +175,27 @@ namespace ProjectHero2.Core
             {
                 this.ErrorCollection.Add(errorItem);
             }
+
+            public AvailableProjectNode ToAvailableNode()
+            {
+                AvailableProjectNode node = new AvailableProjectNode();
+                node.FilePath = this.FilePath;
+                node.Md5Hash = this.Md5Hash;
+                node.Name = this.Name;
+                node.ProjType = this.ProjType;
+
+                return node;
+            }
         }
         private HashSet<ProjectNode> m_Nodes;
+
+        public string SubscriberName
+        {
+            get
+            {
+                return "ucProjectHero";
+            }
+        }
 
         public ucProjectHero()
         {
@@ -150,6 +210,35 @@ namespace ProjectHero2.Core
         {
             this._applicationObject = applicationObject;
             SetTheme();
+            ProjectHeroSettingManager.Manager.LoadSettings();
+            LoadState();
+
+            m_SyncRunner.SyncComplete -= m_SyncRunner_SyncComplete;
+            m_SyncRunner.SyncComplete += m_SyncRunner_SyncComplete;
+
+            m_SyncRunner.SyncUpdate -= m_SyncRunner_SyncUpdate;
+            m_SyncRunner.SyncUpdate += m_SyncRunner_SyncUpdate;
+        }
+
+
+        void m_SyncRunner_SyncUpdate(string status)
+        {
+            CrossThreadInvoker2 invoker = new CrossThreadInvoker2(delegate (object val)
+            {
+                lblQuickSync.Text = val.ToString();
+            });
+
+            this.Invoke(invoker, new object[] { status });
+        }
+
+        void m_SyncRunner_SyncComplete(bool isCancelled)
+        {
+            CrossThreadInvoker invoker = new CrossThreadInvoker(delegate ()
+            {
+                lblQuickSync.Text = "Quick Sync Ready";
+            });
+
+            this.Invoke(invoker);
         }
 
         public override void SetTheme()
@@ -166,6 +255,8 @@ namespace ProjectHero2.Core
         {
             try
             {
+                ProjectHeroSettings settings = ProjectHeroSettingManager.Manager.PluginSettings;
+
                 switch (e)
                 {
                     case VSEvents.SolutionOpened:
@@ -179,44 +270,52 @@ namespace ProjectHero2.Core
                     case VSEvents.ProjectItemAdded:
                     case VSEvents.ProjectItemRemoved:
                     case VSEvents.ProjectItemRenamed:
-                        ActivateControl();
+                        if (settings.DisplayOnSolutionChange)
+                            ActivateControl();
                         OnSolutionOpenedOrProjectChanged();
                         break;
 
                     case VSEvents.SolutionBeforeClosing:
-                        ActivateControl();
+                        if (settings.DisplayOnSolutionChange)
+                            ActivateControl();
                         m_isSolutionClosing = true;
                         break;
 
                     case VSEvents.SolutionAfterClosing:
                         m_isSolutionClosing = false;
-                        ActivateControl();
+                        if (settings.DisplayOnSolutionChange)
+                            ActivateControl();
                         OnSolutionOpenedOrProjectChanged();
                         OnSolutionClosed();
                         break;
 
                     case VSEvents.BuildBegin:
-                        ActivateControl();
+                        if (settings.DisplayOnBuildStart || settings.OverrideVSOutputWindow)
+                            ActivateControl();
                         OnBuildBegin();
                         break;
 
                     case VSEvents.BuildComplete:
-                        ActivateControl();
+                        if (settings.OverrideVSOutputWindow)
+                            ActivateControl();
                         OnBuildEnd();
                         break;
 
                     case VSEvents.BuildProjectConfigBegin:
-                        ActivateControl();
+                        if (settings.OverrideVSOutputWindow)
+                            ActivateControl();
                         OnProjectBuildStart(state as BuildProjectConfigEventArg);
                         break;
 
                     case VSEvents.BuildProjectConfigDone:
-                        ActivateControl();
+                        if (settings.OverrideVSOutputWindow)
+                            ActivateControl();
                         OnProjectBuildEnd(state as BuildProjectConfigEventArg);
                         break;
 
                     case VSEvents.BeforeCommandExecute:
                         // Handle the cancel event from the menu since it wasn't covered in our plugin.
+                        // ================================================================================
                         CommandExecuteEventArg commandEventArg = state as CommandExecuteEventArg;
                         Command cmd = commandEventArg.Command;
 
@@ -232,15 +331,35 @@ namespace ProjectHero2.Core
             }
 
             callNextProcedure = false;
-        }
+        }    
 
         #region Event Methods
 
         private void ActivateControl()
         {
-            Window2 win = VSWindowManager.Manager.GetWindow(VSSettings.vshwnd_ProjectHero);
-            if (!win.Visible)
-                win.Activate();
+            ProjectHeroToolWindow window = (ProjectHeroToolWindow)ProjectHeroFactory.SharedInstance.PluginPackage.FindToolWindow(typeof(ProjectHeroToolWindow), 0, true);
+            if ((window == null) || (window.Frame == null))
+            {
+                throw new NotSupportedException("Cannot create tool window for Project Hero");
+            }
+
+            IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
+            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+        }
+
+        private void ResetStopWatch()
+        {
+            if (m_Nodes != null && m_Nodes.Count > 0)
+            {
+                // ================================================================================
+                // Make sure this stop watch isn't running anymore for any nodes.
+                // ================================================================================
+                foreach (ProjectNode node in m_Nodes)
+                {
+                    if (node.BuildStopWatch != null && node.BuildStopWatch.IsRunning)
+                        node.BuildStopWatch.Stop();
+                }
+            }
         }
 
         private void OnSolutionClosed()
@@ -254,6 +373,7 @@ namespace ProjectHero2.Core
             lvView.Items.Clear();
             lvView.Groups.Clear();
 
+			ResetStopWatch();
             m_Nodes.Clear();
             m_Nodes = null;
 
@@ -268,7 +388,9 @@ namespace ProjectHero2.Core
             if (m_isSolutionClosing)
                 return;
 
+            // ================================================================================
             // Re-initialize the hashset and the dictionary.
+            // ================================================================================
             if (m_Nodes != null)
             {
                 m_Nodes.Clear();
@@ -297,7 +419,9 @@ namespace ProjectHero2.Core
             ResetProgressBar();
             SetProgressBarMax(m_Nodes.Count());
 
+            // ================================================================================
             // Set the state of all nodes to 'Pending'.
+            // ================================================================================
             var nodes = m_Nodes.Where(e => e.ParentNode != null);
             foreach (ProjectNode node in nodes)
             {
@@ -308,14 +432,23 @@ namespace ProjectHero2.Core
                 item.Tag = node;
             }
 
+            dtBuildStartTime = DateTime.Now;
+            lblCompletionTime.Text = "Calculating total time...";
+
+            // ================================================================================
             // Update state information.
+            // ================================================================================
             m_StateDictionary[ProjectCountConst] =
             m_StateDictionary[PendingConst] = nodes.Count();
             UpdateDictionaryStatus();
+
+            btnManageQuickSyncBindings.Enabled = false;
         }
 
         private void OnBuildEnd()
         {
+            dtBuildEndTime = DateTime.Now;
+
             HideProgressElements();
             ResetProgressBar();
             UpdateDictionaryStatus();
@@ -325,6 +458,8 @@ namespace ProjectHero2.Core
                 OnSolutionClosed();
                 OnSolutionOpenedOrProjectChanged();
                 m_buildCancelResetNeeded = false;
+                
+                m_SyncRunner.CancelAllWork();
             }
             else if (m_StateDictionary[PendingConst] > 0)
             {
@@ -344,6 +479,8 @@ namespace ProjectHero2.Core
                 lvView.Invalidate();
                 UpdateDictionaryStatus();
             }
+
+            btnManageQuickSyncBindings.Enabled = true;
         }
 
         private void OnProjectBuildStart(BuildProjectConfigEventArg e)
@@ -356,14 +493,16 @@ namespace ProjectHero2.Core
             node.Platform = e.Platform;
             node.ProjectConfig = e.ProjectConfig;
             node.State = ProjectNodeState.Building;
-            node.BuildStartTime = DateTime.Now;
+            node.BuildStopWatch = Stopwatch.StartNew();
 
             ListViewItem item = lvView.Items[node.Name];
             item.Tag = node;
             item.SubItems[2].Text = node.ProjectConfig;
             item.SubItems[3].Text = "Building";
 
+            // ================================================================================
             // Update state information.
+            // ================================================================================
             m_StateDictionary[PendingConst]--;
         }
 
@@ -374,45 +513,69 @@ namespace ProjectHero2.Core
                 return;
 
             node.State = (e.Success) ? ProjectNodeState.Done : ProjectNodeState.Error;
-            node.BuildEndTime = DateTime.Now;
+            node.BuildStopWatch.Stop();
+            node.BuildTotalTime = node.BuildStopWatch.Elapsed;
+            Debug.Print(string.Format("----------- {0} took {1} to complete building.", node.Name, node.BuildTotalTime.ToString("g")));
 
             ListViewItem item = lvView.Items[node.Name];
             item.SubItems[3].Text = e.Success ? "Done" : "Error";
 
+            // ================================================================================
             // Calculate the difference in build time.
-            TimeSpan tsDiff = node.BuildEndTime.Subtract(node.BuildStartTime);
-            string outputString = tsDiff.Seconds > 0 ?
-                string.Format("{0}s {1}ms", tsDiff.Seconds, tsDiff.Milliseconds) :
-                string.Format("{0}ms", tsDiff.Milliseconds);
+            // ================================================================================
+            string outputString = node.BuildTotalTime.Seconds > 0 ?
+                string.Format("{0}s {1}ms", node.BuildTotalTime.Seconds, node.BuildTotalTime.Milliseconds) :
+                string.Format("{0}ms", node.BuildTotalTime.Milliseconds);
 
             item.SubItems[4].Text = outputString;
 
             if (e.Success)
-            {
-                // It's possible that the project was skipped and we'll know from 
-                // the time delta :-).
-                if (tsDiff.Seconds == 0 && tsDiff.Milliseconds == 0)
+            {   // ================================================================================
+                // It's possible that the project was skipped and we'll know from the time 
+                // delta :-).
+                // ================================================================================
+                if (node.BuildTotalTime.Seconds == 0 && node.BuildTotalTime.Milliseconds == 0)
                 {
                     m_StateDictionary[SkippedConst]++;
                     node.State = ProjectNodeState.Skipped;
                     item.SubItems[3].Text = "Skipped";
                 }
                 else
+                { 
                     m_StateDictionary[CompletedConst]++;
+
+                    // ================================================================================
+                    // If Quick Sync is enabled and this node is setup for quick synchronization then
+                    // let's go ahead and activate the process.
+                    // ================================================================================
+                    if (ProjectHeroSettingManager.Manager.PluginSettings.EnableQuickSync && node.IsQuickSyncEnabled)
+                    {
+                        SourceProjectBinding binding = ProjectHeroSettingManager.Manager.PluginSettings.QuickSyncAssociations.FirstOrDefault(i => i.MD5Hash.Equals(node.Md5Hash));
+                        if (binding != null)
+                            m_SyncRunner.Add(binding);
+                    }
+                }
             }
             else
             {
-                // Let's find out why this project failed to build.
+                // ================================================================================
+                // The project failed to build.
+                // ================================================================================
                 m_StateDictionary[FailedConst]++;
             }
 
+            // ================================================================================
             // Update the status bar.
+            // ================================================================================
             progBar.Value++;
             progBar.Invalidate();
 
             UpdateDictionaryStatus();
 
+            // ================================================================================
             // Check for any errors associated with this project.
+            // Note: This functionality will be enabled in the v1.1 release.
+            // ================================================================================
             if (m_StateDictionary[FailedConst] > 0)
             {
                 ErrorItems errorItems = _applicationObject.ToolWindows.ErrorList.ErrorItems;
@@ -423,7 +586,9 @@ namespace ProjectHero2.Core
                         node.AddError(errorItem);
                 }
 
+                // ================================================================================
                 // Cover both cases here.
+                // ================================================================================
                 if (!e.Success)
                 {
                     if (node.ErrorCollection.Count > 0)
@@ -433,7 +598,9 @@ namespace ProjectHero2.Core
                 }
             }
 
+            // ================================================================================
             // Update the list view item node with all data.
+            // ================================================================================
             item.Tag = node;
         }
 
@@ -451,12 +618,80 @@ namespace ProjectHero2.Core
         {
             tsSep1.Visible = tsSep2.Visible = false;
             btnCancelBuild.Visible = progBar.Visible = false;
+
+            // ================================================================================
+            // If any projects were built we need to display the total build time.
+            // Otherwise we need to reset the label status.
+            // ================================================================================
+            if (m_StateDictionary != null && m_StateDictionary.ContainsKey(CompletedConst) && m_StateDictionary[CompletedConst] > 0)
+            {
+                TimeSpan tsTotalTime = dtBuildEndTime.Subtract(dtBuildStartTime);
+
+                // ================================================================================
+                // Make the calculation look clear and concise so let's prepare it for display 
+                // to the user.
+                // ================================================================================
+                if (tsTotalTime > TimeSpan.Zero)
+                {
+                    StringBuilder timeBuilder = new StringBuilder();
+                    timeBuilder.Append("Build time of");
+
+                    // ================================================================================
+                    // Account for hours (yikes!).
+                    // ================================================================================
+                    if (tsTotalTime.Hours > 0)
+                    {
+                        if (tsTotalTime.Hours == 1)
+                            timeBuilder.Append(" 1Hr");
+                        else
+                            timeBuilder.AppendFormat(" {0}Hrs", tsTotalTime.Hours);
+                    }
+
+                    // ================================================================================
+                    // Account for minutes.
+                    // ================================================================================
+                    if (tsTotalTime.Minutes > 0)
+                    {
+                        if (tsTotalTime.Minutes == 1)
+                            timeBuilder.Append(" 1minute");
+                        else
+                            timeBuilder.AppendFormat(" {0}minutes", tsTotalTime.Minutes);
+                    }
+
+                    // ================================================================================
+                    // Account for seconds.
+                    // ================================================================================
+                    if (tsTotalTime.Seconds > 0)
+                    {
+                        timeBuilder.AppendFormat(" {0}sec", tsTotalTime.Seconds);
+                    }
+
+                    // ================================================================================
+                    // Account for milliseconds.
+                    // ================================================================================
+                    if (tsTotalTime.Milliseconds > 0)
+                    {
+                        timeBuilder.AppendFormat(" {0}ms", tsTotalTime.Milliseconds);
+                    }
+
+                    // ================================================================================
+                    // Update the display now.
+                    // ================================================================================
+                    lblCompletionTime.Text = timeBuilder.ToString();
+                }
+            }
         }
 
         private void ResetProgressBar()
         {
             progBar.Value = 0;
             progBar.Maximum = 100;
+
+            // ================================================================================
+            // Reset the text on the label accordingly.
+            // ================================================================================
+            if (m_StateDictionary != null && m_StateDictionary.ContainsKey(CompletedConst) && m_StateDictionary[CompletedConst] == 0)
+                lblCompletionTime.Text = "Ready.";
         }
 
         private void SetProgressBarMax(int maximum)
@@ -485,7 +720,7 @@ namespace ProjectHero2.Core
         }
 
         ProjectNode rootNode = null;
-
+       
         private void ScanSolution2()
         {
             Solution masterSolution = this._applicationObject.Solution;
@@ -495,12 +730,16 @@ namespace ProjectHero2.Core
             {
                 if (solutionProjects.Count > 0)
                 {
+                    // ================================================================================
                     // Clear all existing nodes out since this could be a rebuild of the list.
+                    // ================================================================================
                     lvView.Items.Clear();
                     m_Nodes.Clear();
 
+                    // ================================================================================
                     // Add the solution node as the root node.
-                    rootNode = new ProjectNode(masterSolution.GetSolutionName(), VSProjectType.Solution, null);
+                    // ================================================================================
+                    rootNode = new ProjectNode(masterSolution.GetSolutionName(), string.Empty, string.Empty, VSProjectType.Solution, null);
                     m_Nodes.Add(rootNode);
 
                     ISolution solution = masterSolution.ScanSolution();
@@ -508,15 +747,34 @@ namespace ProjectHero2.Core
                     {
                         foreach (ISolutionProject project in solution.SolutionProjectCollection.OrderBy(i => i.Name))
                         {
-                            ProjectNode node = new ProjectNode(project.Name, project.ProjectType, rootNode, project.UniqueName);
+                            ProjectNode node = new ProjectNode(project.Name, project.FilePath, project.MD5HashCode, project.ProjectType, rootNode, project.UniqueName);
+
+                            // ================================================================================
+                            // If this node is quick sync enabled then make a note that we can synchronize.
+                            // ================================================================================
+                            if (ProjectHeroSettingManager.Manager.PluginSettings.QuickSyncAssociations != null &&
+                                ProjectHeroSettingManager.Manager.PluginSettings.QuickSyncAssociations.Count > 0)
+                            {
+                                SourceProjectBinding binding = ProjectHeroSettingManager.Manager.PluginSettings.QuickSyncAssociations.FirstOrDefault(i => i.MD5Hash.Equals(node.Md5Hash));
+                                if (binding != null)
+                                {
+                                    binding.ProjectFilePath = project.FilePath;
+                                    node.IsQuickSyncEnabled = true;
+                                }
+                            }
+
                             m_Nodes.Add(node);
                         }
                     }
 
+                    // ================================================================================
                     // Build the nodes out into the list view for visual representation.
+                    // ================================================================================
                     BuildListViewItems();
 
+                    // ================================================================================
                     // Update the status of the state dictionary and status buttons.
+                    // ================================================================================
                     ResetDictionary();
                     m_StateDictionary[ProjectCountConst] = m_Nodes.Count(i => i.ParentNode != null);
                     UpdateDictionaryStatus();
@@ -524,127 +782,37 @@ namespace ProjectHero2.Core
                     solution.Dispose();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Un-comment to see any errors.
-                //MessageBox.Show(ex.Message);
-            }
-        }
-
-        private void NavigateProject(Project project)
-        {
-            ProjectNode childNode = new ProjectNode(project.GetProjectName(), VSProjectType.SolutionItems, null);
-            m_Nodes.Add(childNode);
-
-            NavigateProjectItems(project.ProjectItems, childNode, project);
-        }
-
-        private void NavigateProjectItems(ProjectItems colProjectItems, ProjectNode parentNode, Project project)
-        {
-            if (colProjectItems == null)
-                return;
-
-            foreach (ProjectItem projItem in colProjectItems)
-            {
-                if (projItem.Object is Project)
-                {
-                    Project thisProject = projItem.Object as Project;
-                    VSProjectType projType = VSUtils.DetermineProjectType(thisProject.Kind);
-                    switch (projType)
-                    {
-                        case VSProjectType.CPlusPlusProject:
-                        case VSProjectType.CSharpProject:
-                        case VSProjectType.SDECSharpProject:
-                        case VSProjectType.FSharpProject:
-                        case VSProjectType.VBProject:
-                        case VSProjectType.SDEVBProject:
-                        case VSProjectType.VJSharpProject:
-                            ProjectNode node = new ProjectNode(projItem.Name, projType, parentNode, thisProject.UniqueName);
-                            m_Nodes.Add(node);
-                            break;
-                    }
-                }
-                else
-                {
-                    if (projItem.SubProject != null)
-                        NavigateProject(projItem.SubProject);
-                }
-            }
-        }
-
-        private void ScanSolution()
-        {
-            Solution masterSolution = this._applicationObject.Solution;
-            Projects solutionProjects = masterSolution.Projects;
-
-            if (solutionProjects.Count > 0)
-            {
-                // Clear all existing nodes out since this could be a rebuild of the list.
-                lvView.Items.Clear();
-                m_Nodes.Clear();
-
-                // Add the solution node as the root node.
-                ProjectNode rootNode = new ProjectNode(masterSolution.GetSolutionName(), VSProjectType.Solution, null);
-                m_Nodes.Add(rootNode);
-
-                // Scan through all of the projects to find all of the necessary projects and project items.
-                foreach (Project project in solutionProjects)
-                {
-                    VSProjectType projType = VSUtils.DetermineProjectType(project);
-                    switch (projType)
-                    {
-                        case VSProjectType.SolutionItems:
-                            if (project.DoesSolutionItemHaveProjects())
-                            {
-                                ProjectNode childNode = new ProjectNode(project.GetProjectName(), VSProjectType.SolutionItems, null);
-                                m_Nodes.Add(childNode);
-
-                                // Scan the depth of the solution item for more projects.
-                                //ScanProject(project, childNode);
-                            }
-                            break;
-
-                        // Note: For the unsuspecting culprit projects these aren't quite identified well.
-                        case VSProjectType.Unmodeled:
-                        case VSProjectType.CPlusPlusProject:
-                        case VSProjectType.CSharpProject:
-                        case VSProjectType.SDECSharpProject:
-                        case VSProjectType.FSharpProject:
-                        case VSProjectType.VBProject:
-                        case VSProjectType.SDEVBProject:
-                        case VSProjectType.VJSharpProject:
-                            ProjectNode solutionChildProject = new ProjectNode(project.GetProjectName(), projType, rootNode, project.UniqueName);
-                            m_Nodes.Add(solutionChildProject);
-                            break;
-                    }
-                }
-
-                // Build the nodes out into the list view for visual representation.
-                BuildListViewItems();
-
-                // Update the status of the state dictionary and status buttons.
-                ResetDictionary();
-                m_StateDictionary[ProjectCountConst] = m_Nodes.Count(i => i.ParentNode != null);
-                UpdateDictionaryStatus();
+                // Do nothing.
             }
         }
 
         private void BuildListViewItems()
         {
+            // ================================================================================
             // Nothing was found so don't process.
+            // ================================================================================
             if (m_Nodes.Count == 0)
                 return;
 
-            // Prevent drawing from happening.
+            // ================================================================================
+            // Prevent drawing from happening while things are updating since this can
+            // degrade performance, especially on systems that utilize software rendering.
+            // ================================================================================
             lvView.BeginUpdate();
 
+            // ================================================================================
             // Create the solution group.
+            // ================================================================================
             ProjectNode solutionNode = m_Nodes.First(e => e.ProjType == VSProjectType.Solution);
             ListViewGroup solutionGroup = new ListViewGroup(solutionNode.Name, solutionNode.Name);
             solutionGroup.Tag = solutionNode;
             lvView.Groups.Add(solutionGroup);
 
+            // ================================================================================
             // Find all nodes that fall directly under the current solution group.
+            // ================================================================================
             foreach (ProjectNode node in m_Nodes.Where(e => e.ParentNode == solutionNode))
             {
                 ListViewItem viewItem = new ListViewItem(
@@ -657,14 +825,18 @@ namespace ProjectHero2.Core
                 lvView.Items.Add(viewItem);
             }
 
+            // ================================================================================
             // Find every other top level node so we can list it.
+            // ================================================================================
             foreach (ProjectNode node in m_Nodes.Where(e => e.ProjType == VSProjectType.SolutionItems))
             {
                 ListViewGroup childGroup = new ListViewGroup(node.Name, node.Name);
                 childGroup.Tag = node;
                 lvView.Groups.Add(childGroup);
 
+                // ================================================================================
                 // Find all nodes that relate to this grouped node so we can assign it accordingly.
+                // ================================================================================
                 foreach (ProjectNode projectNode in m_Nodes.Where(e => e.ParentNode == node))
                 {
                     ListViewItem viewItem = new ListViewItem(
@@ -678,7 +850,9 @@ namespace ProjectHero2.Core
                 }
             }
 
+            // ================================================================================
             // Allow all changes to be rendered.
+            // ================================================================================
             lvView.EndUpdate();
         }
 
@@ -697,7 +871,7 @@ namespace ProjectHero2.Core
                     break;
 
                 case ProjectNodeState.Done:
-                    bmp = resHero.Check;
+                    bmp = resHero.tick_green;
                     break;
 
                 case ProjectNodeState.Error:
@@ -746,6 +920,34 @@ namespace ProjectHero2.Core
             return bmp;
         }
 
+        private void SaveState()
+        {
+            ProjectHeroSettingManager.Manager.SaveSettings();
+        }
+
+        private void LoadState()
+        {
+            if (ProjectHeroSettingManager.Manager.PluginSettings != null &&
+                ProjectHeroSettingManager.Manager.PluginSettings.VisualSettings.Count > 0)
+            {
+                foreach (ColumnInformation columnInfo in ProjectHeroSettingManager.Manager.PluginSettings.VisualSettings)
+                {
+                    foreach (ColumnHeader header in lvView.Columns)
+                    {
+                        // ================================================================================
+                        // If this header corresponds to the column information then let's simply
+                        // update the width of this column accordingly.
+                        // ================================================================================
+                        if (header.Text.ToLower().Trim().Equals(columnInfo.Name.ToLower().Trim()))
+                        {
+                            header.Width = columnInfo.Width;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         #endregion Private Methods
 
         private void btnCancelBuild_Click(object sender, EventArgs e)
@@ -759,8 +961,10 @@ namespace ProjectHero2.Core
             Graphics g = e.Graphics;
             using (StringFormat stringFormat = new StringFormat())
             {
+                // ================================================================================
                 // The text drawn for the header should conform accordingly to the
                 // header column specifications for rendered text so it looks good.
+                // ================================================================================
                 switch (e.Header.TextAlign)
                 {
                     case HorizontalAlignment.Center:
@@ -772,10 +976,14 @@ namespace ProjectHero2.Core
                         break;
                 }
 
+                // ================================================================================
                 // Draw the background.
+                // ================================================================================
                 e.DrawBackground();
 
+                // ================================================================================
                 // Draw the header text now with high quality compositing mode.
+                // ================================================================================
                 using (Font headerFont = new Font(DefaultFont, 12, FontStyle.Bold, GraphicsUnit.Pixel))
                 {
                     g.CompositingQuality = CompositingQuality.HighQuality;
@@ -824,30 +1032,40 @@ namespace ProjectHero2.Core
 
             switch (e.ColumnIndex)
             {
+                // ================================================================================
                 // Name
+                // ================================================================================
                 case 0:
                     g.DrawImageUnscaled(bmp, e.Bounds.X, e.Bounds.Y);
                     g.DrawString(e.Item.Text, fFont, brush, new PointF(bmp.Width + 2, e.Bounds.Y));
                     break;
 
+                // ================================================================================
                 // Type
+                // ================================================================================
                 case 1:
                     g.DrawString(e.SubItem.Text ?? string.Empty, fFont, brush, new PointF(e.Bounds.X, e.Bounds.Y));
                     break;
 
+                // ================================================================================
                 // Configuration
+                // ================================================================================
                 case 2:
                     g.DrawString(e.SubItem.Text ?? string.Empty, fFont, brush, new PointF(e.Bounds.X, e.Bounds.Y));
                     break;
 
+                // ================================================================================
                 // Status
+                // ================================================================================
                 case 3:
                     if (node.State != ProjectNodeState.Idle)
                     {
                         Bitmap tmpBmp = GetImageProjectState(node.State);
                         g.DrawImageUnscaled(tmpBmp, e.Bounds.X, e.Bounds.Y);
 
+                        // ================================================================================
                         // If the node is currently in an error state we'll need to treat it differently.
+                        // ================================================================================
                         if (node.State == ProjectNodeState.Error)
                         {
                             using (SolidBrush errorBrush = new SolidBrush(Color.Red))
@@ -865,13 +1083,17 @@ namespace ProjectHero2.Core
                         g.DrawString(e.SubItem.Text ?? string.Empty, fFont, brush, new PointF(e.Bounds.X, e.Bounds.Y));
                     break;
 
+                // ================================================================================
                 // Completed
+                // ================================================================================
                 case 4:
                     g.DrawString(e.SubItem.Text ?? string.Empty, fFont, brush, new PointF(e.Bounds.X, e.Bounds.Y));
                     break;
             }
 
+            // ================================================================================
             // Dispose of all resources temporarily used here.
+            // ================================================================================
             fFont.Dispose();
             fFont = null;
 
@@ -882,6 +1104,107 @@ namespace ProjectHero2.Core
         private void lvView_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
         {
             lvView.Invalidate();
+
+            // ================================================================================
+            // Don't bother with all this if we don't have an active plugin settings instance
+            // or have loaded the settings.
+            // ================================================================================
+            if (ProjectHeroSettingManager.Manager.PluginSettings == null || !ProjectHeroSettingManager.Manager.IsSettingsLoaded)
+                return;
+
+            // ================================================================================
+            // If this is the first time loading up the visual settings then we can
+            // safely add all of the new columns.
+            // ================================================================================
+            if (ProjectHeroSettingManager.Manager.PluginSettings.VisualSettings.Count == 0)
+            {
+                foreach (ColumnHeader column in lvView.Columns)
+                {
+                    ProjectHeroSettingManager.Manager.PluginSettings.VisualSettings.Add(new ColumnInformation
+                    {
+                        Name = column.Text.Trim(),
+                        Width = column.Width
+                    });
+                }
+            }
+            else
+            {
+                ColumnHeader header = lvView.Columns[e.ColumnIndex];
+                ColumnInformation columnInfo = ProjectHeroSettingManager.Manager.PluginSettings.VisualSettings.FirstOrDefault(i => i.Name.Trim().ToLower().Equals(header.Text.Trim().ToLower()));
+
+                if (columnInfo != null)
+                    columnInfo.Width = header.Width;
+                else
+                {
+                    ColumnInformation newColumn = new ColumnInformation();
+                    newColumn.Name = header.Text.Trim();
+                    newColumn.Width = header.Width;
+
+                    ProjectHeroSettingManager.Manager.PluginSettings.VisualSettings.Add(newColumn);
+                }
+            }
+
+            // ================================================================================
+            // Update the state of the settings immediately so it reflects in
+            // all instances of Visual Studio that the user may open later.
+            // ================================================================================
+            ProjectHeroSettingManager.Manager.SaveSettings();
+        }
+
+        private void lvView_MouseMove(object sender, MouseEventArgs e)
+        {
+            // ================================================================================
+            // We don't want to repaint the entire control in this situation
+            // since it can become expensive quickly. Let's only repaint the
+            // portion the mouse hovers over only. It's efficient and the 
+            // correct way to approach this problem.
+            // ================================================================================
+            ListViewItem item = lvView.GetItemAt(e.X, e.Y);
+            if (item != null)
+                lvView.Invalidate(item.Bounds);
+        }
+
+        private void btnManageQuickSyncBindings_Click(object sender, EventArgs e)
+        {
+            if (!_applicationObject.Solution.IsOpen)
+            {
+                MessageBox.Show("Please open a solution first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            List<AvailableProjectNode> nodes = null;
+            if (m_Nodes != null && m_Nodes.Count > 0)
+            {
+                nodes = new List<AvailableProjectNode>();
+
+                foreach (ProjectNode node in m_Nodes)
+                {
+                    if (node.ProjType == VSProjectType.Solution)
+                        continue;
+
+                    nodes.Add(node.ToAvailableNode());
+                }
+            }
+
+            using (frmQuickSyncBindings quickSyncBindings = new frmQuickSyncBindings(nodes))
+            {
+                quickSyncBindings.ShowDialog();
+            }
+
+            // ================================================================================
+            // Let's update the status of each project so we can quickly tell what needs
+            // to be quick synchronized on build time.
+            // ================================================================================
+            if (ProjectHeroSettingManager.Manager.PluginSettings.QuickSyncAssociations.Count > 0)
+            {
+                foreach (ProjectNode node in m_Nodes)
+                {
+                    if (ProjectHeroSettingManager.Manager.PluginSettings.QuickSyncAssociations.FirstOrDefault(i => i.MD5Hash.Equals(node.Md5Hash)) != null)
+                    {
+                        node.IsQuickSyncEnabled = true;
+                    }
+                }
+            }
         }
     }
 }

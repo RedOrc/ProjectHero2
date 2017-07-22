@@ -1,6 +1,7 @@
 ﻿using EnvDTE;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,6 +46,18 @@ namespace ProjectHero2.Core.Iterators
             private set;
         }
 
+        public string FilePath
+        {
+            get;
+            private set;
+        }
+
+        public string MD5HashCode
+        {
+            get;
+            private set;
+        }
+
         public VSSolutionProject(ISolutionFolder folder, Project project)
         {
             this.ParentSolutionFolder = folder;
@@ -64,6 +77,11 @@ namespace ProjectHero2.Core.Iterators
             this.Name = this.Project.GetProjectName();
             this.UniqueName = this.Project.UniqueName;
             this.ProjectType = this.Project.GetProjectType();
+                                    
+            if (!string.IsNullOrEmpty(this.Project.FullName))
+                this.FilePath = Path.GetDirectoryName(this.Project.FullName);
+
+            this.MD5HashCode = Crypto.GenerateMD5Hash(this.UniqueName);
         }
 
         public void Dispose()

@@ -14,6 +14,9 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
+using EnvDTE80;
+using EnvDTE;
+using ProjectHero2.Core;
 
 namespace ProjectHero2
 {
@@ -38,8 +41,9 @@ namespace ProjectHero2
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(ProjectHeroCommandPackage.PackageGuidString)]
-    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    [ProvideAutoLoad(UIContextGuids80.NoSolution)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
+    [ProvideToolWindow(typeof(ProjectHeroToolWindow))]
     public sealed class ProjectHeroCommandPackage : Package
     {
         /// <summary>
@@ -66,7 +70,15 @@ namespace ProjectHero2
         /// </summary>
         protected override void Initialize()
         {
+            DTE2 appObject = (DTE2)GetService(typeof(DTE));
+            
+            VSEventManager.SharedManager.Setup(appObject);            
+            ProjectHeroSettingManager.Manager.LoadSettings();
+            ProjectHeroFactory.SharedInstance.InitPluginPackage(this);
+            ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);
+
             ProjectHeroCommand.Initialize(this);
+            ProjectHeroToolWindowCommand.Initialize(this);
             base.Initialize();
         }
 
