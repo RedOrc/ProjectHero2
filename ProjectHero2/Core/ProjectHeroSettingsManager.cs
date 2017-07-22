@@ -78,7 +78,7 @@ namespace ProjectHero2.Core
 
             if (settingsPath != null)
             {
-                settingsPath = Path.Combine(settingsPath, APP_CONFIG_FILE);
+                settingsPath = Path.Combine(settingsPath, "ProjectHero2", APP_CONFIG_FILE);
             }
 
             return settingsPath;

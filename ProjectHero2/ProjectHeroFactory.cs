@@ -1,4 +1,6 @@
 ﻿using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using ProjectHero2.Core;
 
 namespace ProjectHero2
@@ -14,8 +16,17 @@ namespace ProjectHero2
             }
         }
 
+        private Package pluginPackage;
         private DTE2 applicationObject;
         private ucProjectHero heroControl;
+
+        public Package PluginPackage
+        {
+            get
+            {
+                return this.pluginPackage;
+            }
+        }
 
         public DTE2 GetApplicationObject
         {
@@ -45,6 +56,11 @@ namespace ProjectHero2
         public void InitApplicationObject(DTE2 appObject)
         {
             this.applicationObject = appObject;
+        }
+
+        public void InitPluginPackage(Package package)
+        {
+            this.pluginPackage = package;
         }
     }
 }

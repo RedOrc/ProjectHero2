@@ -29,6 +29,7 @@ using System.Diagnostics;
 using ProjectHero2.Core;
 using static ProjectHero2.Core.ucProjectHero;
 using ProjectHero2.Core.Dialogs;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace ProjectHero2.Core
 {
@@ -336,7 +337,14 @@ namespace ProjectHero2.Core
 
         private void ActivateControl()
         {
-			// NOOP
+            ProjectHeroToolWindow window = (ProjectHeroToolWindow)ProjectHeroFactory.SharedInstance.PluginPackage.FindToolWindow(typeof(ProjectHeroToolWindow), 0, true);
+            if ((window == null) || (window.Frame == null))
+            {
+                throw new NotSupportedException("Cannot create tool window for Project Hero");
+            }
+
+            IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
+            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
 
         private void ResetStopWatch()
