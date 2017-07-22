@@ -18,7 +18,9 @@ namespace ProjectHero2.Core.Iterators
             this._solution = new VSSolution(solution.GetSolutionName());
             foreach (Project project in solution.Projects)
             {
+                // ================================================================================
                 // Check if this is actually a valid project type.
+                // ================================================================================
                 if (project.IsValidProject())
                 {
                     if (project.Object == null)
@@ -39,6 +41,10 @@ namespace ProjectHero2.Core.Iterators
             if (itemCollection == null)
                 return;
 
+            // ================================================================================
+            // Navigate through the solution structure and determine whether
+            // valid projects exist that we can add.
+            // ================================================================================
             foreach (ProjectItem item in itemCollection)
             {
                 if (item.SubProject != null)

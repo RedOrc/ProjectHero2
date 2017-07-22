@@ -102,4 +102,10 @@ namespace ProjectHero2.Core
         Solution,
         Unknown
     }
+
+    public enum FileType
+    {
+        Directory,
+        File
+    }
 }

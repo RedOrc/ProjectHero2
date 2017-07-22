@@ -51,10 +51,36 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Core\Crypto.cs" />
+    <Compile Include="Core\Dialogs\frmFileFolderSelectionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmFileFolderSelectionDialog.Designer.cs">
+      <DependentUpon>frmFileFolderSelectionDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmProjectSelection.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmProjectSelection.Designer.cs">
+      <DependentUpon>frmProjectSelection.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmQuickSyncBindings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmQuickSyncBindings.Designer.cs">
+      <DependentUpon>frmQuickSyncBindings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmSettings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Core\Dialogs\frmSettings.Designer.cs">
+      <DependentUpon>frmSettings.cs</DependentUpon>
+    </Compile>
     <Compile Include="Core\Enums.cs" />
     <Compile Include="Core\ExtensionMethods.cs" />
     <Compile Include="Core\IEventModel.cs" />
     <Compile Include="Core\IObjectLifecycle.cs" />
+    <Compile Include="Core\Iterators\FolderScanner.cs" />
     <Compile Include="Core\Iterators\ISolution.cs" />
     <Compile Include="Core\Iterators\ISolutionFolder.cs" />
     <Compile Include="Core\Iterators\ISolutionIterator.cs" />
@@ -67,6 +93,10 @@
     <Compile Include="Core\OptimizedListView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Core\ProjectHeroSettings.cs" />
+    <Compile Include="Core\ProjectHeroSettingsManager.cs" />
+    <Compile Include="Core\QuickSyncRunner.cs" />
+    <Compile Include="Core\SysFileItem.cs" />
     <Compile Include="Core\ucProjectHero.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -227,6 +257,18 @@
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Core\Dialogs\frmFileFolderSelectionDialog.resx">
+      <DependentUpon>frmFileFolderSelectionDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Core\Dialogs\frmProjectSelection.resx">
+      <DependentUpon>frmProjectSelection.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Core\Dialogs\frmQuickSyncBindings.resx">
+      <DependentUpon>frmQuickSyncBindings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Core\Dialogs\frmSettings.resx">
+      <DependentUpon>frmSettings.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Core\ucProjectHero.resx">
       <DependentUpon>ucProjectHero.cs</DependentUpon>
     </EmbeddedResource>
@@ -240,6 +282,13 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\file.png" />
+    <None Include="Resources\folder.png" />
+    <None Include="Resources\1021.png" />
+    <None Include="Resources\0951.png" />
+    <None Include="Resources\0492.png" />
+    <None Include="Resources\occluder1.png" />
+    <None Include="Resources\lightning1.png" />
     <Content Include="Resources\ProjectHeroToolWindowCommand.png" />
     <None Include="Resources\VBProject_SolutionExplorerNode.png" />
     <None Include="Resources\Solution_8308.png" />
@@ -288,6 +337,7 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
