@@ -77,6 +77,7 @@
             this.treeProjects.SelectedImageIndex = 0;
             this.treeProjects.Size = new System.Drawing.Size(335, 167);
             this.treeProjects.TabIndex = 0;
+            this.treeProjects.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeProjects_AfterSelect);
             // 
             // imageList1
             // 
@@ -101,6 +102,7 @@
             this.lbFolders.Size = new System.Drawing.Size(357, 167);
             this.lbFolders.Sorted = true;
             this.lbFolders.TabIndex = 0;
+            this.lbFolders.KeyUp += new System.Windows.Forms.KeyEventHandler(this.lbFolders_KeyUp);
             // 
             // statusStrip1
             // 
@@ -117,7 +119,7 @@
             // 
             this.lblStatus.ForeColor = System.Drawing.Color.White;
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(39, 17);
+            this.lblStatus.Size = new System.Drawing.Size(38, 17);
             this.lblStatus.Text = "Ready";
             // 
             // propGrid
@@ -128,6 +130,7 @@
             this.propGrid.PropertySort = System.Windows.Forms.PropertySort.Alphabetical;
             this.propGrid.Size = new System.Drawing.Size(696, 205);
             this.propGrid.TabIndex = 11;
+            this.propGrid.PropertyValueChanged += new System.Windows.Forms.PropertyValueChangedEventHandler(this.propGrid_PropertyValueChanged);
             // 
             // btnRemoveAllProjects
             // 
@@ -138,6 +141,7 @@
             this.btnRemoveAllProjects.TabIndex = 16;
             this.btnRemoveAllProjects.Text = "&Remove All Projects";
             this.btnRemoveAllProjects.UseVisualStyleBackColor = true;
+            this.btnRemoveAllProjects.Click += new System.EventHandler(this.btnRemoveAllProjects_Click);
             // 
             // label2
             // 
@@ -179,6 +183,7 @@
             this.btnAddProject.TabIndex = 10;
             this.btnAddProject.Text = "&Add Project(s)";
             this.btnAddProject.UseVisualStyleBackColor = true;
+            this.btnAddProject.Click += new System.EventHandler(this.btnAddProject_Click);
             // 
             // frmQuickSyncBindings
             // 
