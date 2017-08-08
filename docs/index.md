@@ -1,5 +1,3 @@
-![alt text](https://redorc.github.io/ProjectHero2/PH2.png "ProjectHero2")
-
 # About
 
 Project Hero is a visual build status tool for Visual Studio 2017 that transforms the boring output window into a user friendly display on build status. It was designed as a pet project after frustration with the inadequate **Output Window** that comes as part of the Visual Studio IDE. I set out on a journey to understand Visual Studio Internals and a couple weeks later version one of this project came to life supporting Visual Studio 2010, 2012 and 2013. This plugin has mostly been confined to private usage at my workplace but now after converting it to support Visual Studio 2017 I am making the new code available!
