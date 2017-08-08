@@ -4,6 +4,8 @@ Project Hero is a visual build status tool for Visual Studio 2017 that transform
 
 Many people probably have frustration understanding Visual Studio Internals and it does require a bit of a learning curve to grasp. Fortunately, I have provided a good amount of comments, sometimes quick and dirty solutions to problems that arise out of sheer ignorance but overall a fast, stable and extensible plugin! It's my first attempt at Visual Studio Plugins and I hope you find my source code informative and helpful in your journey developing extensions for the Visual Studio Platform.
 
+# Screenshot
+![alt text](https://redorc.github.io/ProjectHero2/1.png "Project Hero 2 loaded in Visual Studio 2017 Enterprise")
 
 # Supported Products
 
