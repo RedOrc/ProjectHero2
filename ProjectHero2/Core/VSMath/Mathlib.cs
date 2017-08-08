@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ProjectHero2.Core.VSMath
 {
+    [Obsolete("Defined for advanced graphing functionality but will no longer be utilized")]
     public static class Mathlib
     {
         public static double ToRadians(double degrees)

@@ -27,7 +27,7 @@ namespace ProjectHero2.Core
 
     /// <summary>
     /// Windows Messages
-    /// Defined by Alphonso Turner specifically for 
+    /// Defined specifically for 
     /// Visual Studio 2013 interprocess messaging.
     /// </summary>
     public enum Win32ProjectHeroMessages : uint

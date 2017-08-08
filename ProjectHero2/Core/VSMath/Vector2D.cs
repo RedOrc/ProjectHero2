@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace ProjectHero2.Core.VSMath
 {
+    [Obsolete("Defined for advanced graphing functionality but will no longer be utilized")]
     public class Vector2D
     {
         #region Properties
