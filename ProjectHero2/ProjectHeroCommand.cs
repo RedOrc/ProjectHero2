@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Text;
 using ProjectHero2.Core;
+using ProjectHero2.Core.Dialogs;
 
 namespace ProjectHero2
 {
@@ -57,6 +58,14 @@ namespace ProjectHero2
                     IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
                     Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
                 }, new CommandID(CommandSet, ShowProjectHeroCommandId)));
+
+                commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e)
+                {
+                    using (frmSettings hwndSettings = new frmSettings())
+                    {
+                        hwndSettings.ShowDialog();
+                    }
+                }, new CommandID(CommandSet, ShowProjectHeroSettingsCommandId)));
 
                 commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e)
                 {

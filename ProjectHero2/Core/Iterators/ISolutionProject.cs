@@ -15,5 +15,7 @@ namespace ProjectHero2.Core.Iterators
         VSProjectType ProjectType { get; }
         string Name { get; }
         string UniqueName { get; }
+        string FilePath { get; }
+        string MD5HashCode { get; }
     }
 }

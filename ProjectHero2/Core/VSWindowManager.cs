@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace ProjectHero2.Core
 {
+    [Obsolete("No longer needed in the new Visual Studio 2017 VS Package Model")]
     public sealed class VSWindowManager : IObjectLifecycle
     {
         private static VSWindowManager _manager = null;

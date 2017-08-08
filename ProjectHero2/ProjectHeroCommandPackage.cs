@@ -71,7 +71,10 @@ namespace ProjectHero2
         protected override void Initialize()
         {
             DTE2 appObject = (DTE2)GetService(typeof(DTE));
-            VSEventManager.SharedManager.Setup(appObject);
+            
+            VSEventManager.SharedManager.Setup(appObject);            
+            ProjectHeroSettingManager.Manager.LoadSettings();
+            ProjectHeroFactory.SharedInstance.InitPluginPackage(this);
             ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);
 
             ProjectHeroCommand.Initialize(this);
