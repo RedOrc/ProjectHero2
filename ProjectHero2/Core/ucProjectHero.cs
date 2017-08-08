@@ -984,7 +984,7 @@ namespace ProjectHero2.Core
                 // ================================================================================
                 // Draw the header text now with high quality compositing mode.
                 // ================================================================================
-                using (Font headerFont = new Font(DefaultFont, 12, FontStyle.Bold, GraphicsUnit.Pixel))
+                using (Font headerFont = new Font(DefaultFont, 14, FontStyle.Bold, GraphicsUnit.Pixel))
                 {
                     g.CompositingQuality = CompositingQuality.HighQuality;
                     g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
@@ -1022,7 +1022,7 @@ namespace ProjectHero2.Core
         {
             Graphics g = e.Graphics;
             ProjectNode node = e.Item.Tag as ProjectNode;
-            Font fFont = new Font(DefaultFont, 12.0f, FontStyle.Regular, GraphicsUnit.Pixel);
+            Font fFont = new Font(DefaultFont, 14.0f, FontStyle.Regular, GraphicsUnit.Pixel);
             Bitmap bmp = GetImageForProjectType(node.ProjType);
             SolidBrush brush = new SolidBrush(node.IsSelected ? Color.White : Color.Black);
 
