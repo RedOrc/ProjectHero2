@@ -86,7 +86,7 @@
             this.btnDone.Image = global::ProjectHero2.resHero.tick_green;
             this.btnDone.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnDone.Name = "btnDone";
-            this.btnDone.Size = new System.Drawing.Size(64, 22);
+            this.btnDone.Size = new System.Drawing.Size(61, 22);
             this.btnDone.Text = "0 Done";
             this.btnDone.ToolTipText = "How many projects were built successfully.";
             // 
@@ -95,7 +95,7 @@
             this.btnFailed.Image = global::ProjectHero2.resHero.error2;
             this.btnFailed.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnFailed.Name = "btnFailed";
-            this.btnFailed.Size = new System.Drawing.Size(67, 22);
+            this.btnFailed.Size = new System.Drawing.Size(64, 22);
             this.btnFailed.Text = "0 Failed";
             this.btnFailed.ToolTipText = "How many projects failed to build.";
             // 
@@ -104,7 +104,7 @@
             this.btnSkipped.Image = global::ProjectHero2.resHero.skip;
             this.btnSkipped.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnSkipped.Name = "btnSkipped";
-            this.btnSkipped.Size = new System.Drawing.Size(78, 22);
+            this.btnSkipped.Size = new System.Drawing.Size(73, 22);
             this.btnSkipped.Text = "0 Skipped";
             this.btnSkipped.ToolTipText = "How many projects have been skipped.";
             // 
@@ -113,7 +113,7 @@
             this.btnPending.Image = global::ProjectHero2.resHero.pending;
             this.btnPending.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnPending.Name = "btnPending";
-            this.btnPending.Size = new System.Drawing.Size(80, 22);
+            this.btnPending.Size = new System.Drawing.Size(74, 22);
             this.btnPending.Text = "0 Pending";
             this.btnPending.ToolTipText = "How projects are currently pending to be built.";
             // 
@@ -128,7 +128,7 @@
             this.btnCancelBuild.Image = global::ProjectHero2.resHero.hand;
             this.btnCancelBuild.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnCancelBuild.Name = "btnCancelBuild";
-            this.btnCancelBuild.Size = new System.Drawing.Size(63, 22);
+            this.btnCancelBuild.Size = new System.Drawing.Size(59, 22);
             this.btnCancelBuild.Text = "Cancel";
             this.btnCancelBuild.ToolTipText = "Cancel the current build.";
             this.btnCancelBuild.Visible = false;
@@ -155,7 +155,7 @@
             // lblProjectCount
             // 
             this.lblProjectCount.Name = "lblProjectCount";
-            this.lblProjectCount.Size = new System.Drawing.Size(58, 22);
+            this.lblProjectCount.Size = new System.Drawing.Size(55, 22);
             this.lblProjectCount.Text = "0 Projects";
             this.lblProjectCount.ToolTipText = "The number of projects in your solution.";
             // 
@@ -180,9 +180,10 @@
             // 
             this.lblQuickSync.Image = global::ProjectHero2.resHero.lightning;
             this.lblQuickSync.Name = "lblQuickSync";
-            this.lblQuickSync.Size = new System.Drawing.Size(117, 22);
+            this.lblQuickSync.Size = new System.Drawing.Size(109, 22);
             this.lblQuickSync.Text = "Quick Sync Ready";
             this.lblQuickSync.ToolTipText = "Quick Sync will synchronize successfully built projects to designated folders.";
+            this.lblQuickSync.Visible = false;
             // 
             // btnManageQuickSyncBindings
             // 
@@ -193,6 +194,7 @@
             this.btnManageQuickSyncBindings.Size = new System.Drawing.Size(117, 22);
             this.btnManageQuickSyncBindings.Text = "Manage Sync Bindings";
             this.btnManageQuickSyncBindings.ToolTipText = "Manage your quick sync bindings.";
+            this.btnManageQuickSyncBindings.Visible = false;
             this.btnManageQuickSyncBindings.Click += new System.EventHandler(this.btnManageQuickSyncBindings_Click);
             // 
             // lvView

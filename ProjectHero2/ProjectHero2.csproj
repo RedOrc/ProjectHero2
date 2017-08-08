@@ -289,7 +289,14 @@
     <None Include="Resources\0951.png" />
     <None Include="Resources\0492.png" />
     <None Include="Resources\occluder1.png" />
-    <None Include="Resources\lightning1.png" />
+    <Content Include="LICENSE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\ProjectHero2.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="Resources\ProjectHeroToolWindowCommand.png" />
     <None Include="Resources\VBProject_SolutionExplorerNode.png" />
     <None Include="Resources\Solution_8308.png" />
