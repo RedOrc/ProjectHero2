@@ -209,8 +209,8 @@ namespace ProjectHero2.Core
         public void Init(DTE2 applicationObject)
         {
             this._applicationObject = applicationObject;
+
             SetTheme();
-            ProjectHeroSettingManager.Manager.LoadSettings();
             LoadState();
 
             m_SyncRunner.SyncComplete -= m_SyncRunner_SyncComplete;

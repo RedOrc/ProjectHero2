@@ -104,13 +104,12 @@
             // groupBox2
             // 
             this.groupBox2.Controls.Add(this.chkEnableQuickSync);
-            this.groupBox2.Location = new System.Drawing.Point(18, 186);
+            this.groupBox2.Location = new System.Drawing.Point(12, 139);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(326, 45);
             this.groupBox2.TabIndex = 8;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Quick Sync Settings";
-            this.groupBox2.Visible = false;
             // 
             // chkEnableQuickSync
             // 
@@ -121,12 +120,11 @@
             this.chkEnableQuickSync.TabIndex = 0;
             this.chkEnableQuickSync.Text = "Enable Quick Sync";
             this.chkEnableQuickSync.UseVisualStyleBackColor = true;
-            this.chkEnableQuickSync.Visible = false;
             // 
             // btnSaveChanges
             // 
             this.btnSaveChanges.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnSaveChanges.Location = new System.Drawing.Point(116, 139);
+            this.btnSaveChanges.Location = new System.Drawing.Point(107, 190);
             this.btnSaveChanges.Name = "btnSaveChanges";
             this.btnSaveChanges.Size = new System.Drawing.Size(140, 23);
             this.btnSaveChanges.TabIndex = 7;
@@ -138,7 +136,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(349, 168);
+            this.ClientSize = new System.Drawing.Size(349, 218);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnSaveChanges);
             this.Controls.Add(this.groupBox2);
