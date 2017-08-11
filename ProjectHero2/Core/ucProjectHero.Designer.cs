@@ -183,7 +183,6 @@
             this.lblQuickSync.Size = new System.Drawing.Size(109, 22);
             this.lblQuickSync.Text = "Quick Sync Ready";
             this.lblQuickSync.ToolTipText = "Quick Sync will synchronize successfully built projects to designated folders.";
-            this.lblQuickSync.Visible = false;
             // 
             // btnManageQuickSyncBindings
             // 
@@ -194,7 +193,6 @@
             this.btnManageQuickSyncBindings.Size = new System.Drawing.Size(117, 22);
             this.btnManageQuickSyncBindings.Text = "Manage Sync Bindings";
             this.btnManageQuickSyncBindings.ToolTipText = "Manage your quick sync bindings.";
-            this.btnManageQuickSyncBindings.Visible = false;
             this.btnManageQuickSyncBindings.Click += new System.EventHandler(this.btnManageQuickSyncBindings_Click);
             // 
             // lvView

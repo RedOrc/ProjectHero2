@@ -72,8 +72,8 @@ namespace ProjectHero2
         {
             DTE2 appObject = (DTE2)GetService(typeof(DTE));
             
-            VSEventManager.SharedManager.Setup(appObject);            
-            ProjectHeroSettingManager.Manager.LoadSettings();
+            VSEventManager.SharedManager.Setup(appObject);
+            ProjectHeroSettingManager.Manager.PreLoadSettings(ServiceProvider.GlobalProvider);
             ProjectHeroFactory.SharedInstance.InitPluginPackage(this);
             ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);
 

@@ -10,6 +10,8 @@
  * 
  */
 
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +22,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Xml.Schema;
 
 namespace ProjectHero2.Core
 {
@@ -49,136 +52,84 @@ namespace ProjectHero2.Core
             private set;
         }
 
-        private static string preferredSettingsLocation = null;
-        private const string APP_CONFIG_FILE = "ProjectHeroConfig.xml";
-
-        private string GetSuggestedConfigLocation()
+        public IServiceProvider ServiceProvider
         {
-            string settingsPath = null;
-
-            try
-            {
-                settingsPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            }
-            catch
-            {
-                try
-                {
-                    settingsPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments);
-                }
-                catch
-                {
-                    try
-                    {
-                        settingsPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    }
-                    catch { /* Out of options */}
-                }
-            }
-
-            if (settingsPath != null)
-            {
-                settingsPath = Path.Combine(settingsPath, "ProjectHero2", APP_CONFIG_FILE);
-            }
-
-            return settingsPath;
+            get;
+            private set;
         }
 
-        [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
-        public ProjectHeroSettings PreLoadSettings()
-        {
-            ProjectHeroSettings settings = null;
+        private const string COLLECTION_GROUP = "ProjectHero2";
 
-            try
-            {
-                // ================================================================================
-                // Determine the path for the current executing assembly.
-                // ================================================================================
-                preferredSettingsLocation = GetSuggestedConfigLocation();
+        private const string DISPLAY_ON_BUILD_START = "DisplayOnBuildStart";
+        private const string DISPLAY_ON_SOLUTION_CHANGE = "DisplayOnSolutionChange";
+        private const string DISPLAY_ON_STARTUP = "DisplayOnStartup";
+        private const string OVERRIDE_VS_OUTPUT_WINDOW = "OverrideVsOutputWindow";
+        private const string ENABLE_QUICK_SYNC = "EnableQuickSync";
+        private const string VISUAL_SETTINGS = "VisualSettings";
 
-                Console.WriteLine("Preferred Settings location set at {0}", preferredSettingsLocation);
-
-                // ================================================================================
-                // If this file doesn't exist then we want to set our default settings.
-                // ================================================================================
-                if (!File.Exists(preferredSettingsLocation))
-                {
-                    settings = new ProjectHeroSettings();
-                    settings.DisplayOnBuildStart = true;
-                    settings.DisplayOnSolutionChange = true;
-                    settings.DisplayOnStartup = true;
-                    settings.OverrideVSOutputWindow = true;
-                    settings.EnableQuickSync = false;
-                    return settings;
-                }
-
-                XmlSerializer serializer = new XmlSerializer(typeof(ProjectHeroSettings));
-                using (XmlReader reader = XmlReader.Create(preferredSettingsLocation))
-                {
-                    if (serializer.CanDeserialize(reader))
-                    {
-                        settings = serializer.Deserialize(reader) as ProjectHeroSettings;
-                    }
-                }
-
-                return settings;
-            }
-            catch (Exception ex)
-            {
-                // Do nothing.
-            }
-
-            return null;
-        }
+        private const string NULL = "{NULL}";
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
-        public void LoadSettings()
+        public void PreLoadSettings(IServiceProvider serviceProvider)
         {
-            try
+            this.ServiceProvider = serviceProvider;
+
+            SettingsManager settingsManager = new ShellSettingsManager(serviceProvider);
+            WritableSettingsStore settingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+            this.PluginSettings = new ProjectHeroSettings();
+
+            if (!settingsStore.CollectionExists(COLLECTION_GROUP))
             {
-                // ================================================================================
-                // NOTE:
-                // I don't ever recommend duplication of code in two methods but since
-                // this is so isolated I decided to take the poor programmers route
-                // and not just make one method to return back an instance of the 
-                // Project Settings.
-                // ================================================================================
+                settingsStore.CreateCollection(COLLECTION_GROUP);
+            }
+            
+            if (!settingsStore.PropertyExists(COLLECTION_GROUP, DISPLAY_ON_BUILD_START))
+            {
+                settingsStore.SetBoolean(COLLECTION_GROUP, DISPLAY_ON_BUILD_START, true);
+            }
+            this.PluginSettings.DisplayOnBuildStart = settingsStore.GetBoolean(COLLECTION_GROUP, DISPLAY_ON_BUILD_START, true);
 
-                // ================================================================================
-                // Determine the path for the current executing assembly.
-                // ================================================================================
-                preferredSettingsLocation = GetSuggestedConfigLocation();
+            if (!settingsStore.PropertyExists(COLLECTION_GROUP, DISPLAY_ON_SOLUTION_CHANGE))
+            {
+                settingsStore.SetBoolean(COLLECTION_GROUP, DISPLAY_ON_SOLUTION_CHANGE, true);
+            }
+            this.PluginSettings.DisplayOnSolutionChange = settingsStore.GetBoolean(COLLECTION_GROUP, DISPLAY_ON_SOLUTION_CHANGE, true);
 
-                // ================================================================================
-                // If this file doesn't exist then we want to set our default settings.
-                // ================================================================================
-                if (!File.Exists(preferredSettingsLocation))
+            if (!settingsStore.PropertyExists(COLLECTION_GROUP, DISPLAY_ON_STARTUP))
+            {
+                settingsStore.SetBoolean(COLLECTION_GROUP, DISPLAY_ON_STARTUP, true);
+            }
+            this.PluginSettings.DisplayOnStartup = settingsStore.GetBoolean(COLLECTION_GROUP, DISPLAY_ON_STARTUP, true);
+
+            if (!settingsStore.PropertyExists(COLLECTION_GROUP, OVERRIDE_VS_OUTPUT_WINDOW))
+            {
+                settingsStore.SetBoolean(COLLECTION_GROUP, OVERRIDE_VS_OUTPUT_WINDOW, true);
+            }
+            this.PluginSettings.OverrideVSOutputWindow = settingsStore.GetBoolean(COLLECTION_GROUP, OVERRIDE_VS_OUTPUT_WINDOW, true);
+
+            if (!settingsStore.PropertyExists(COLLECTION_GROUP, ENABLE_QUICK_SYNC))
+            {
+                settingsStore.SetBoolean(COLLECTION_GROUP, ENABLE_QUICK_SYNC, false);
+            }
+            this.PluginSettings.EnableQuickSync = settingsStore.GetBoolean(COLLECTION_GROUP, ENABLE_QUICK_SYNC, false);
+            
+            if (!settingsStore.PropertyExists(COLLECTION_GROUP, VISUAL_SETTINGS))
+            {
+                settingsStore.SetString(COLLECTION_GROUP, VISUAL_SETTINGS, NULL);
+            }
+            else
+            {
+                string visualSettings = settingsStore.GetString(COLLECTION_GROUP, VISUAL_SETTINGS);
+                CustomColumnInfoCompressor decompressor = new CustomColumnInfoCompressor();
+                List<ColumnInformation> columns = decompressor.Decompress(visualSettings);
+                if (columns != null)
                 {
-                    PluginSettings = new ProjectHeroSettings();
-                    PluginSettings.DisplayOnBuildStart = true;
-                    PluginSettings.DisplayOnSolutionChange = true;
-                    PluginSettings.DisplayOnStartup = true;
-                    PluginSettings.OverrideVSOutputWindow = true;
-                    PluginSettings.EnableQuickSync = false;
-                    this.IsSettingsLoaded = true;
-                    SaveSettings();
-                    return;
-                }
-
-                XmlSerializer serializer = new XmlSerializer(typeof(ProjectHeroSettings));
-                using (XmlReader reader = XmlReader.Create(preferredSettingsLocation))
-                {
-                    if (serializer.CanDeserialize(reader))
-                    {
-                        PluginSettings = serializer.Deserialize(reader) as ProjectHeroSettings;
-                        this.IsSettingsLoaded = true;
-                    }
+                    this.PluginSettings.VisualSettings = new List<ColumnInformation>(columns);
                 }
             }
-            catch
-            {
-                // Do nothing.
-            }
+
+            this.IsSettingsLoaded = true;
         }
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
@@ -186,26 +137,69 @@ namespace ProjectHero2.Core
         {
             try
             {
-                // ================================================================================
-                // Determine the path for the current executing assembly.
-                // ================================================================================
-                preferredSettingsLocation = GetSuggestedConfigLocation();
+                SettingsManager settingsManager = new ShellSettingsManager(this.ServiceProvider);
+                WritableSettingsStore settingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 
-                // ================================================================================
-                // Let's serialize the settings object and then write it to file.
-                // ================================================================================
-                XmlSerializer serializer = new XmlSerializer(typeof(ProjectHeroSettings));
-                using (XmlWriter writer = XmlWriter.Create(preferredSettingsLocation))
-                {
-                    serializer.Serialize(writer, PluginSettings);
-                    writer.Flush();
-                    writer.Close();
-                }
+                settingsStore.SetBoolean(COLLECTION_GROUP, DISPLAY_ON_BUILD_START, this.PluginSettings.DisplayOnBuildStart);
+                settingsStore.SetBoolean(COLLECTION_GROUP, DISPLAY_ON_SOLUTION_CHANGE, this.PluginSettings.DisplayOnSolutionChange);
+                settingsStore.SetBoolean(COLLECTION_GROUP, DISPLAY_ON_STARTUP, this.PluginSettings.DisplayOnStartup);
+                settingsStore.SetBoolean(COLLECTION_GROUP, OVERRIDE_VS_OUTPUT_WINDOW, this.PluginSettings.OverrideVSOutputWindow);
+                settingsStore.SetBoolean(COLLECTION_GROUP, ENABLE_QUICK_SYNC, this.PluginSettings.EnableQuickSync);
+
+                CustomColumnInfoCompressor compressor = new CustomColumnInfoCompressor();
+                string visualContents = compressor.Compress(this.PluginSettings.VisualSettings);
+                settingsStore.SetString(COLLECTION_GROUP, VISUAL_SETTINGS, visualContents);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                // Do nothing.
+                // Do nothing
             }
+        }
+    }
+
+    internal class CustomColumnInfoCompressor
+    {
+        public string Compress(List<ColumnInformation> columnList)
+        {
+            if (columnList.Count == 0)
+                return "{NULL}";
+
+            StringBuilder builder = new StringBuilder();
+            int ndx = 0;
+
+            builder.Append("[");
+            foreach (ColumnInformation column in columnList)
+            {
+                if (ndx > 0) builder.Append(",");
+                builder.AppendFormat("({0}:{1})", column.Name, column.Width);
+                ndx++;
+            }
+            builder.Append("]");
+
+            return builder.ToString();
+        }
+
+        public List<ColumnInformation> Decompress(string contents)
+        {
+            if (string.IsNullOrEmpty(contents) || contents.Equals("{NULL}", StringComparison.CurrentCultureIgnoreCase))
+                return null;
+            
+            string[] resultItems = contents.Replace("[", string.Empty)
+                                           .Replace("]", string.Empty)
+                                           .Split(',');
+
+            List<ColumnInformation> columns = new List<ColumnInformation>();
+            foreach (string result in resultItems)
+            {
+                string[] item = result.Replace("(", string.Empty)
+                                    .Replace(")", string.Empty)
+                                    .Split(':');
+                ColumnInformation column = new ColumnInformation();
+                column.Name = item[0];
+                column.Width = Int32.Parse(item[1]);
+                columns.Add(column);
+            }
+            return columns;
         }
     }
 }

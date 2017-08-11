@@ -25,14 +25,14 @@ namespace ProjectHero2.Core
     [Serializable]
     public class ColumnInformation
     {
-        [XmlElement]
+        [XmlElement("Name")]
         public string Name
         {
             get;
             set;
         }
 
-        [XmlElement]
+        [XmlElement("Width")]
         public int Width
         {
             get;
