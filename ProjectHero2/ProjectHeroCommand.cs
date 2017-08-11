@@ -70,7 +70,7 @@ namespace ProjectHero2
                 commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e)
                 {
                     StringBuilder builder = new StringBuilder();
-                    builder.AppendLine("Project Hero v1.0");
+                    builder.AppendLine("Project Hero v1.2");
                     builder.AppendLine();
                     builder.AppendLine("Coded by Alphonso T.");
                     builder.AppendLine();
