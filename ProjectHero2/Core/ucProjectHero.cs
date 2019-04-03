@@ -118,50 +118,42 @@ namespace ProjectHero2.Core
 
             public string GetStateAsString()
             {
-                StringBuilder builder = new StringBuilder();
                 switch (State)
                 {
-                    case ProjectNodeState.Idle: builder.Append("Idle"); break;
-                    case ProjectNodeState.Done: builder.Append("Done"); break;
-                    case ProjectNodeState.Error: builder.Append("Error"); break;
-                    case ProjectNodeState.Pending: builder.Append("Pending"); break;
-                    case ProjectNodeState.Skipped: builder.Append("Skipped"); break;
+                    case ProjectNodeState.Idle: return "Idle";
+                    case ProjectNodeState.Done: return "Done";
+                    case ProjectNodeState.Error: return "Error";
+                    case ProjectNodeState.Pending: return "Pending";
+                    case ProjectNodeState.Skipped: return "Skipped";
+                    default:
+                        return "Building";
                 }
-                return builder.ToString();
             }
 
             public string GetProjectTypeAsString()
             {
-                StringBuilder builder = new StringBuilder();
                 switch (ProjType)
                 {
                     case VSProjectType.CPlusPlusProject:
-                        builder.Append("C++ Project");
-                        break;
+                        return "C++ Project";
 
                     case VSProjectType.CSharpProject:
                     case VSProjectType.SDECSharpProject:
-                        builder.Append("C# Project");
-                        break;
+                        return "C# Project";
 
                     case VSProjectType.FSharpProject:
-                        builder.Append("F# Project");
-                        break;
+                        return "F# Project";
 
                     case VSProjectType.SDEVBProject:
                     case VSProjectType.VBProject:
-                        builder.Append("VB Project");
-                        break;
+                        return "VB Project";
 
                     case VSProjectType.VJSharpProject:
-                        builder.Append("J# Project");
-                        break;
+                        return "J# Project";
 
-                    case VSProjectType.Unknown:
-                        builder.Append("Unknown");
-                        break;
+                    default:
+                        return "Unknown";
                 }
-                return builder.ToString();
             }
 
             public void ResetErrors()
@@ -183,7 +175,6 @@ namespace ProjectHero2.Core
                 node.Md5Hash = this.Md5Hash;
                 node.Name = this.Name;
                 node.ProjType = this.ProjType;
-
                 return node;
             }
         }
@@ -331,7 +322,7 @@ namespace ProjectHero2.Core
             }
 
             callNextProcedure = false;
-        }    
+        }
 
         #region Event Methods
 
@@ -373,7 +364,7 @@ namespace ProjectHero2.Core
             lvView.Items.Clear();
             lvView.Groups.Clear();
 
-			ResetStopWatch();
+            ResetStopWatch();
             m_Nodes.Clear();
             m_Nodes = null;
 
@@ -458,7 +449,7 @@ namespace ProjectHero2.Core
                 OnSolutionClosed();
                 OnSolutionOpenedOrProjectChanged();
                 m_buildCancelResetNeeded = false;
-                
+
                 m_SyncRunner.CancelAllWork();
             }
             else if (m_StateDictionary[PendingConst] > 0)
@@ -541,7 +532,7 @@ namespace ProjectHero2.Core
                     item.SubItems[3].Text = "Skipped";
                 }
                 else
-                { 
+                {
                     m_StateDictionary[CompletedConst]++;
 
                     // ================================================================================
@@ -720,7 +711,7 @@ namespace ProjectHero2.Core
         }
 
         ProjectNode rootNode = null;
-       
+
         private void ScanSolution2()
         {
             Solution masterSolution = this._applicationObject.Solution;
@@ -782,7 +773,7 @@ namespace ProjectHero2.Core
                     solution.Dispose();
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 // Do nothing.
             }
@@ -863,61 +854,49 @@ namespace ProjectHero2.Core
 
         private Bitmap GetImageProjectState(ProjectNodeState state)
         {
-            Bitmap bmp = null;
             switch (state)
             {
                 case ProjectNodeState.Building:
-                    bmp = resHero.waiting;
-                    break;
+                    return resHero.waiting;
 
                 case ProjectNodeState.Done:
-                    bmp = resHero.tick_green;
-                    break;
+                    return resHero.tick_green;
 
                 case ProjectNodeState.Error:
-                    bmp = resHero.exclamation_red;
-                    break;
+                    return resHero.exclamation_red;
 
                 case ProjectNodeState.Pending:
-                    bmp = resHero.pending;
-                    break;
+                    return resHero.pending;
 
                 case ProjectNodeState.Skipped:
-                    bmp = resHero.skip;
-                    break;
+                    return resHero.skip;
+
+                default:
+                    return null;
             }
-            return bmp;
         }
 
         private Bitmap GetImageForProjectType(VSProjectType projType)
         {
-            Bitmap bmp = null;
             switch (projType)
             {
                 case VSProjectType.CPlusPlusProject:
-                    bmp = resHero.cppproject_node;
-                    break;
+                    return resHero.cppproject_node;
 
                 case VSProjectType.CSharpProject:
                 case VSProjectType.SDECSharpProject:
-                    bmp = resHero.csharpproject_node;
-                    break;
+                    return resHero.csharpproject_node;
 
                 case VSProjectType.SDEVBProject:
                 case VSProjectType.VBProject:
-                    bmp = resHero.vbproject_node;
-                    break;
+                    return resHero.vbproject_node;
 
                 case VSProjectType.VJSharpProject:
-                    bmp = resHero.fsharpproject_node;
-                    break;
+                    return resHero.fsharpproject_node;
 
                 default:
-                    // Do nothing here
-                    bmp = resHero.rbproject_node;
-                    break;
+                    return resHero.rbproject_node;
             }
-            return bmp;
         }
 
         private void SaveState()
@@ -938,7 +917,7 @@ namespace ProjectHero2.Core
                         // If this header corresponds to the column information then let's simply
                         // update the width of this column accordingly.
                         // ================================================================================
-                        if (header.Text.ToLower().Trim().Equals(columnInfo.Name.ToLower().Trim()))
+                        if (string.Equals(header.Text.Trim(), columnInfo.Name.Trim(), StringComparison.OrdinalIgnoreCase))
                         {
                             header.Width = columnInfo.Width;
                             break;
@@ -1175,7 +1154,7 @@ namespace ProjectHero2.Core
             List<AvailableProjectNode> nodes = null;
             if (m_Nodes != null && m_Nodes.Count > 0)
             {
-                nodes = new List<AvailableProjectNode>();
+                nodes = new List<AvailableProjectNode>(m_Nodes.Count);
 
                 foreach (ProjectNode node in m_Nodes)
                 {

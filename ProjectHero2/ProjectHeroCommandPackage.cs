@@ -17,6 +17,8 @@ using Microsoft.Win32;
 using EnvDTE80;
 using EnvDTE;
 using ProjectHero2.Core;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ProjectHero2
 {
@@ -37,14 +39,14 @@ namespace ProjectHero2
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(ProjectHeroCommandPackage.PackageGuidString)]
-    [ProvideAutoLoad(UIContextGuids80.NoSolution)]
+    [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideToolWindow(typeof(ProjectHeroToolWindow))]
-    public sealed class ProjectHeroCommandPackage : Package
+    public sealed class ProjectHeroCommandPackage : AsyncPackage
     {
         /// <summary>
         /// ProjectHeroCommandPackage GUID string.
@@ -64,14 +66,10 @@ namespace ProjectHero2
 
         #region Package Members
 
-        /// <summary>
-        /// Initialization of the package; this method is called right after the package is sited, so this is the place
-        /// where you can put all the initialization code that rely on services provided by VisualStudio.
-        /// </summary>
-        protected override void Initialize()
+        protected override System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            DTE2 appObject = (DTE2)GetService(typeof(DTE));
-            
+            DTE2 appObject = (DTE2)GetService(typeof(SDTE));            
+
             VSEventManager.SharedManager.Setup(appObject);
             ProjectHeroSettingManager.Manager.PreLoadSettings(ServiceProvider.GlobalProvider);
             ProjectHeroFactory.SharedInstance.InitPluginPackage(this);
@@ -79,7 +77,8 @@ namespace ProjectHero2
 
             ProjectHeroCommand.Initialize(this);
             ProjectHeroToolWindowCommand.Initialize(this);
-            base.Initialize();
+
+            return System.Threading.Tasks.Task.FromResult<object>(null);
         }
 
         #endregion

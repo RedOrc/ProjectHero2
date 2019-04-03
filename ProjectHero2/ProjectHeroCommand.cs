@@ -70,13 +70,13 @@ namespace ProjectHero2
                 commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e)
                 {
                     StringBuilder builder = new StringBuilder();
-                    builder.AppendLine("Project Hero v1.2");
+                    builder.AppendLine("Project Hero");
                     builder.AppendLine();
                     builder.AppendLine("Coded by Alphonso T.");
                     builder.AppendLine();
                     builder.AppendLine(ABOUT_ASCII);
                     builder.AppendLine();
-                    builder.AppendLine("Copyright (C) 2017. All Rights Reserved");
+                    builder.AppendLine("Copyright (C) 2019. All Rights Reserved");
 
                     VsShellUtilities.ShowMessageBox(
                         this.ServiceProvider,

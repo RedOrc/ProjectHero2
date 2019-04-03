@@ -1,5 +1,6 @@
 ﻿using EnvDTE;
 using EnvDTE80;
+using Microsoft.VisualStudio.Shell.Interop;
 using ProjectHero2.Core.VSEventArgs;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace ProjectHero2.Core
     /// Responsible for managing all Visual Studio events and routing
     /// them to the appropriate windows.
     /// </summary>
-    internal class VSEventManager
+    internal class VSEventManager : IVsSolutionEvents
     {
         private static readonly VSEventManager sharedManager = new VSEventManager();
         public static VSEventManager SharedManager
@@ -24,7 +25,9 @@ namespace ProjectHero2.Core
             }
         }
 
-        private WindowVisibilityEvents _windowVisibilityEvents;
+        public const int S_OK = 0x00000000;
+        public const uint E_FAIL = 0x80004005;
+
         private BuildEvents _buildEvents;
         private SolutionEvents _solutionEvents;
         private ProjectsEvents _projectEvents;
@@ -274,5 +277,60 @@ namespace ProjectHero2.Core
         }
 
         #endregion Build Events
+
+        #region VsSolutionEvents
+
+
+        public int OnAfterOpenProject(IVsHierarchy pHierarchy, int fAdded)
+        {
+            return S_OK;
+        }
+
+        public int OnQueryCloseProject(IVsHierarchy pHierarchy, int fRemoving, ref int pfCancel)
+        {
+            return S_OK;
+        }
+
+        public int OnBeforeCloseProject(IVsHierarchy pHierarchy, int fRemoved)
+        {
+            return S_OK;
+        }
+
+        public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy)
+        {
+            return S_OK;
+        }
+
+        public int OnQueryUnloadProject(IVsHierarchy pRealHierarchy, ref int pfCancel)
+        {
+            return S_OK;
+        }
+
+        public int OnBeforeUnloadProject(IVsHierarchy pRealHierarchy, IVsHierarchy pStubHierarchy)
+        {
+            return S_OK;
+        }
+
+        public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
+        {
+            return S_OK;
+        }
+
+        public int OnQueryCloseSolution(object pUnkReserved, ref int pfCancel)
+        {
+            return S_OK;
+        }
+
+        public int OnBeforeCloseSolution(object pUnkReserved)
+        {
+            return S_OK;
+        }
+
+        public int OnAfterCloseSolution(object pUnkReserved)
+        {
+            return S_OK;
+        }
+
+        #endregion 
     }
 }

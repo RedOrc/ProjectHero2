@@ -9,8 +9,8 @@ namespace ProjectHero2.Core.VSEventArgs
 {
     internal class BuildBeginEventArg
     {
-        public vsBuildScope Scope { get; set; }
-        public vsBuildAction Action { get; set; }
+        public vsBuildScope Scope { get; private set; }
+        public vsBuildAction Action { get; private set; }
 
         public BuildBeginEventArg(vsBuildScope scope, vsBuildAction action)
         {

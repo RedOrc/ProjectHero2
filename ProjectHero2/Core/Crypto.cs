@@ -37,13 +37,16 @@ namespace ProjectHero2.Core
             // ================================================================================
             // Now let's hash it using the MD5CryptoServiceProvider.
             // ================================================================================
-            MD5 md5Hash = new MD5CryptoServiceProvider();
-            byte[] result = md5Hash.ComputeHash(unicodeText);
+            byte[] result = null;
+            using (MD5 md5Hash = new MD5CryptoServiceProvider())
+            {
+                result = md5Hash.ComputeHash(unicodeText);
+            }
 
             // ================================================================================
             // Convert the hash into hex now.
             // ================================================================================
-            StringBuilder hashBuilder = new StringBuilder();
+            StringBuilder hashBuilder = new StringBuilder((sizeof(byte) * result.Length) * 2);
             for (int i = 0; i < result.Length; i++)
             {
                 hashBuilder.Append(result[i].ToString("X2"));

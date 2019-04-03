@@ -10,8 +10,8 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("ProjectHero2")]
-[assembly: AssemblyCopyright("Copyright (C) 2017 Alphonso Turner")]
-[assembly: AssemblyTrademark("Alphonso Turner")]
+[assembly: AssemblyCopyright("Copyright (C) 2019 RedOrc")]
+[assembly: AssemblyTrademark("RedOrc")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
