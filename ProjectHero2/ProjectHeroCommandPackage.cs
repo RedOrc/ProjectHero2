@@ -68,9 +68,10 @@ namespace ProjectHero2
 
         protected override System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            DTE2 appObject = (DTE2)GetService(typeof(SDTE));            
+            DTE2 appObject = GetService(typeof(SDTE)) as DTE2;
+            IVsSolution ptrSolution = GetService(typeof(SVsSolution)) as IVsSolution;
 
-            VSEventManager.SharedManager.Setup(appObject);
+            VSEventManager.SharedManager.Setup(appObject, ptrSolution);
             ProjectHeroSettingManager.Manager.PreLoadSettings(ServiceProvider.GlobalProvider);
             ProjectHeroFactory.SharedInstance.InitPluginPackage(this);
             ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);

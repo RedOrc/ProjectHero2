@@ -35,13 +35,17 @@ namespace ProjectHero2.Core
         private CommandEvents _commandEvents;
 
         private DTE2 _applicationObject;
+        private IVsSolution _ptrSolution;
+        private uint pdwCookie;
+
         private IDictionary<String, IEventModel> subscriperMap;
 
         private const int INITIAL_MAP_CAPACITY = 1;
 
-        public void Setup(DTE2 applicationObject)
+        public void Setup(DTE2 applicationObject, IVsSolution ptrSolution)
         {
             this._applicationObject = applicationObject;
+            this._ptrSolution = ptrSolution;
             this.subscriperMap = new Dictionary<String, IEventModel>(INITIAL_MAP_CAPACITY);
             Init();
         }
@@ -49,6 +53,8 @@ namespace ProjectHero2.Core
         private void Init()
         {
             Events2 events2 = (Events2)_applicationObject.Events;
+
+            _ptrSolution.AdviseSolutionEvents(this, out pdwCookie);
 
             // Build Events
             this._buildEvents = events2.BuildEvents;
