@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using ProjectHero2.Core.VSEventArgs;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ namespace ProjectHero2.Core
         private DTE2 _applicationObject;
         private IVsSolution _ptrSolution;
         private uint pdwCookie;
+        private uint advisementResult;
 
         private IDictionary<String, IEventModel> subscriperMap;
 
@@ -54,7 +56,10 @@ namespace ProjectHero2.Core
         {
             Events2 events2 = (Events2)_applicationObject.Events;
 
-            _ptrSolution.AdviseSolutionEvents(this, out pdwCookie);
+            if ((advisementResult = (uint)_ptrSolution.AdviseSolutionEvents(this, out pdwCookie)) != S_OK)
+            {
+                Debug.WriteLine("!!! Unable to hook into the advisement of solution events. !!!");
+            }
 
             // Build Events
             this._buildEvents = events2.BuildEvents;
@@ -113,6 +118,12 @@ namespace ProjectHero2.Core
 
         public void Destroy()
         {
+            // Cleanup the advisement of events.
+            if (advisementResult == S_OK)
+            {
+                _ptrSolution.UnadviseSolutionEvents(pdwCookie);
+            }
+
             // Cleanup build events.
             this._buildEvents.OnBuildBegin -= _buildEvents_OnBuildBegin;
             this._buildEvents.OnBuildDone -= _buildEvents_OnBuildDone;
@@ -319,6 +330,7 @@ namespace ProjectHero2.Core
 
         public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
         {
+            this.SendMessageToAllSubscribers(VSEvents.SolutionOpened, null);
             return S_OK;
         }
 

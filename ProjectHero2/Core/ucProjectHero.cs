@@ -197,7 +197,7 @@ namespace ProjectHero2.Core
         {
         }
 
-        public void Init(DTE2 applicationObject)
+        public void Init(DTE2 applicationObject, bool loadedFromMenu = false)
         {
             this._applicationObject = applicationObject;
 
@@ -209,6 +209,11 @@ namespace ProjectHero2.Core
 
             m_SyncRunner.SyncUpdate -= m_SyncRunner_SyncUpdate;
             m_SyncRunner.SyncUpdate += m_SyncRunner_SyncUpdate;
+
+            if (loadedFromMenu)
+            {
+                OnSolutionOpenedOrProjectChanged();
+            }
         }
 
 

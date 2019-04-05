@@ -20,8 +20,6 @@ namespace ProjectHero2
         public const int ShowProjectHeroSettingsCommandId = 0x0200;
         public const int ShowProjectHeroAboutCommandId = 0x0300;
 
-        private const string ABOUT_ASCII = "✌(◕‿-)✌";
-
         // Command menu group
         public static readonly Guid CommandSet = new Guid("785834e7-b99f-45ae-b043-3c8db402b65a");
 
@@ -69,23 +67,24 @@ namespace ProjectHero2
 
                 commandService.AddCommand(new MenuCommand(delegate (object sender, EventArgs e)
                 {
-                    StringBuilder builder = new StringBuilder();
-                    builder.AppendLine("Project Hero");
-                    builder.AppendLine();
-                    builder.AppendLine("Coded by Alphonso T.");
-                    builder.AppendLine();
-                    builder.AppendLine(ABOUT_ASCII);
-                    builder.AppendLine();
-                    builder.AppendLine("Copyright (C) 2019. All Rights Reserved");
+                    using (frmAbout about = new frmAbout())
+                        about.ShowDialog();
 
-                    VsShellUtilities.ShowMessageBox(
-                        this.ServiceProvider,
-                        builder.ToString(),
-                        "About Project Hero 2",
-                        OLEMSGICON.OLEMSGICON_INFO,
-                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
-                    );
+                    //StringBuilder builder = new StringBuilder();
+                    //builder.AppendLine("Coded by:");
+                    //builder.AppendLine();
+                    //builder.AppendLine("   Fonzie");
+                    //builder.AppendLine();
+                    //builder.AppendLine("Copyright © 2019. All Rights Reserved");
+
+                    //VsShellUtilities.ShowMessageBox(
+                    //    this.ServiceProvider,
+                    //    builder.ToString(),
+                    //    "About Project Hero 2",
+                    //    OLEMSGICON.OLEMSGICON_INFO,
+                    //    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
+                    //);
 
                 }, new CommandID(CommandSet, ShowProjectHeroAboutCommandId)));
             }

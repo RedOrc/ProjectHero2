@@ -287,6 +287,9 @@ namespace ProjectHero2.Core.Dialogs
                 TreeNode selectedNode = treeProjects.SelectedNode;
                 SourceProjectBinding binding = selectedNode.Tag as SourceProjectBinding;
 
+                if (binding == null)
+                    return;
+
                 using (FolderBrowserDialog fbd = new FolderBrowserDialog())
                 {
                     fbd.Description = "Select a folder to sync files to.";
