@@ -66,20 +66,19 @@ namespace ProjectHero2
 
         #region Package Members
 
-        protected override System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
+        protected override async System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            DTE2 appObject = GetService(typeof(SDTE)) as DTE2;
-            IVsSolution ptrSolution = GetService(typeof(SVsSolution)) as IVsSolution;
+            DTE2 appObject = await GetServiceAsync(typeof(SDTE)) as DTE2;
+            IVsSolution ptrSolution = await GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
 
             VSEventManager.SharedManager.Setup(appObject, ptrSolution);
+
             ProjectHeroSettingManager.Manager.PreLoadSettings(ServiceProvider.GlobalProvider);
             ProjectHeroFactory.SharedInstance.InitPluginPackage(this);
             ProjectHeroFactory.SharedInstance.InitApplicationObject(appObject);
 
             ProjectHeroCommand.Initialize(this);
             ProjectHeroToolWindowCommand.Initialize(this);
-
-            return System.Threading.Tasks.Task.FromResult<object>(null);
         }
 
         #endregion

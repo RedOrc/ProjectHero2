@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="ProjectHero2.Company.64267390-1674-48dd-a130-9177fa0943d7" Version="1.5" Language="en-US" Publisher="Alphonso T." />
+        <Identity Id="ProjectHero2.Company.64267390-1674-48dd-a130-9177fa0943d7" Version="1.6" Language="en-US" Publisher="Alphonso T." />
         <DisplayName>ProjectHero2</DisplayName>
         <Description xml:space="preserve">ProjectHero2 is a build visualization tool that allows you to see the build process of all projects in your solution in a more pleasant output window.</Description>
         <MoreInfo>https://redorc.github.io/ProjectHero2/</MoreInfo>
